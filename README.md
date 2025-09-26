@@ -1,36 +1,111 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Tukuyomi Admin System
 
-## Getting Started
+店舗オーナー向け管理システムおよびシステム管理者向け管理画面
 
-First, run the development server:
+## 機能概要
 
+### 1. 店舗オーナー向け機能
+- 店舗編集URL申請
+- PIN認証による安全なアクセス
+- 自店舗情報の編集
+- 求人情報管理
+- 応募者管理
+
+### 2. システム管理者向け機能
+- 申請承認・URL発行
+- 店舗データ管理
+- ユーザー管理
+- マスターデータメンテナンス
+- システム通知管理
+
+## セットアップ
+
+### 1. 依存関係のインストール
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. 環境変数の設定
+`.env.local`ファイルに以下を設定：
+```env
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 3. データベースのマイグレーション
+```bash
+npx supabase migration up
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 4. 管理者ユーザーの作成
+```bash
+node scripts/create-admin.js
+```
 
-## Learn More
+### 5. 開発サーバーの起動
+```bash
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+ポート3001で起動します: http://localhost:3001
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## ディレクトリ構造
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+tukuyomi-admin/
+├── app/                     # Next.js App Router
+│   ├── (auth)/             # 認証関連
+│   ├── (owner)/            # 店舗オーナー向け
+│   ├── (admin)/            # システム管理者向け
+│   └── api/                # API Routes
+├── components/             # 共通コンポーネント
+├── lib/                    # ユーティリティ
+├── types/                  # 型定義
+└── public/                 # 静的ファイル
+```
 
-## Deploy on Vercel
+## セキュリティ機能
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **2段階認証**: URL + PINコード
+- **レート制限**: IPベースの試行回数制限
+- **アカウントロック**: 失敗回数超過時の自動ロック
+- **セッション管理**: 有効期限と使用回数制限
+- **監査ログ**: 全アクセスの記録
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## API仕様
+
+### 認証API
+- `POST /api/auth/login` - 管理者ログイン
+- `POST /api/auth/validate-token` - トークン検証
+- `POST /api/auth/logout` - ログアウト
+
+### 申請管理API
+- `GET /api/requests` - 申請一覧取得
+- `POST /api/requests` - 新規申請
+- `PUT /api/requests/:id` - 申請更新
+- `POST /api/requests/:id/approve` - 承認処理
+
+### 店舗管理API
+- `GET /api/stores/:id` - 店舗情報取得
+- `PUT /api/stores/:id` - 店舗情報更新
+- `POST /api/stores/:id/images` - 画像アップロード
+
+## 開発用コマンド
+
+```bash
+# 開発サーバー起動
+npm run dev
+
+# ビルド
+npm run build
+
+# 本番サーバー起動
+npm start
+
+# 型チェック
+npm run type-check
+
+# リント
+npm run lint
+```

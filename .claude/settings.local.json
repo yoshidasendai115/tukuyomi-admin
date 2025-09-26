@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(osascript:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run dev:*)",
+      "Bash(psql:*)",
+      "Bash(python3:*)",
+      "Bash(pkill:*)",
+      "Bash(node:*)",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_type",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_handle_dialog",
+      "mcp__playwright__browser_wait_for",
+      "mcp__playwright__browser_snapshot",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__morphllm-fast-apply__read_multiple_files",
+      "Bash(curl:*)",
+      "Bash(npx supabase:*)",
+      "Bash(lsof:*)",
+      "Bash(kill:*)",
+      "Bash(PGPASSWORD=postgres psql -U postgres -h localhost -p 54322 -d postgres -c \"\\dt\")",
+      "Bash(xargs kill:*)",
+      "Bash(PGPASSWORD=postgres psql:*)",
+      "Bash(export PGPASSWORD=postgres)",
+      "Bash(npm run build:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

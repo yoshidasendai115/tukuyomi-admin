@@ -18,15 +18,30 @@ interface Store {
   thumbnail_url?: string;
   images?: string[];
   is_active: boolean;
+  // 立地・アクセス
+  nearest_station?: string;
   station?: string;
+  station_route?: string;
   station_line?: string;
   station_distance?: string;
   google_place_id?: string;
   google_maps_uri?: string;
   latitude?: number;
   longitude?: number;
+  // 営業情報
+  seating_capacity?: string;
+  payment_methods?: string;
+  // その他の基本情報
   price_level?: string;
+  catch_copy?: string;
   website?: string;
+  // SNS・Web
+  website_url?: string;
+  instagram_url?: string;
+  facebook_url?: string;
+  x_twitter_url?: string;
+  line_url?: string;
+  tiktok_url?: string;
   rating?: number;
   review_count?: number;
   area?: string;
@@ -36,8 +51,10 @@ interface Store {
   tags?: string[];
   view_count?: number;
   owner_id?: string;
+  // 連絡先情報（GA社用）
   email?: string;
   line_id?: string;
+  contact_phone_for_ga?: string;
   minimum_hourly_wage?: number;
   maximum_hourly_wage?: number;
   average_daily_income?: number;
@@ -52,6 +69,7 @@ interface Store {
   recruitment_message?: string;
   store_features?: string[];
   payment_system?: string;
+  penalty_system?: string;
   back_rate?: string;
   dormitory_available?: boolean;
   dormitory_details?: string;
@@ -73,6 +91,7 @@ interface Store {
   verified_at?: string;
   verified_by?: string;
   custom_notes?: string;
+  custom_memo?: string;
   image_url?: string;
   additional_images?: string[];
   accessible_stations?: any;
@@ -640,13 +659,13 @@ export default function OwnerEditPage() {
 
   const tabs = [
     { id: 'basic', label: '基本情報' },
-    { id: 'location', label: '立地・アクセス' },
-    { id: 'business', label: '営業情報' },
+    // { id: 'location', label: '立地・アクセス' }, // 基本情報に統合
+    // { id: 'business', label: '営業情報' }, // 基本情報に統合
     { id: 'images', label: '画像' },
     { id: 'contact', label: '連絡先' },
-    { id: 'recruitment', label: '求人情報' },
-    { id: 'welfare', label: '福利厚生' },
-    { id: 'sns', label: 'SNS・Web' },
+    // { id: 'recruitment', label: '求人情報' }, // 非表示
+    // { id: 'welfare', label: '福利厚生' }, // 非表示
+    // { id: 'sns', label: 'SNS・Web' }, // 基本情報に統合
     { id: 'message', label: 'お知らせ配信' }
   ];
 
@@ -693,107 +712,386 @@ export default function OwnerEditPage() {
           <form onSubmit={handleSubmit} className="p-6">
             {/* 基本情報タブ */}
             {activeTab === 'basic' && (
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      店舗名 <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name || ''}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      ジャンル
-                    </label>
-                    <select
-                      name="genre_id"
-                      value={formData.genre_id || ''}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    >
-                      <option value="">選択してください</option>
-                      {masterData.genres.map(genre => (
-                        <option key={genre.id} value={genre.id}>
-                          {genre.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      店舗説明
-                    </label>
-                    <textarea
-                      name="description"
-                      value={formData.description || ''}
-                      onChange={handleInputChange}
-                      rows={4}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      価格レベル
-                    </label>
-                    <input
-                      type="text"
-                      name="price_level"
-                      value={formData.price_level || ''}
-                      onChange={handleInputChange}
-                      placeholder="例: ¥¥¥"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      エリア
-                    </label>
-                    <input
-                      type="text"
-                      name="area"
-                      value={formData.area || ''}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    />
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      カスタムメモ（お知らせなど）
-                    </label>
-                    <textarea
-                      name="custom_notes"
-                      value={formData.custom_notes || ''}
-                      onChange={handleInputChange}
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      placeholder="お客様へのお知らせやメモを記入できます"
-                    />
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="flex items-center space-x-2">
+              <div className="space-y-8">
+                {/* 基本情報セクション */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">基本情報</h3>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        店舗名 <span className="text-red-500">*</span>
+                      </label>
                       <input
-                        type="checkbox"
-                        name="is_active"
-                        checked={formData.is_active ?? true}
+                        type="text"
+                        name="name"
+                        value={formData.name || ''}
                         onChange={handleInputChange}
-                        className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       />
-                      <span className="text-sm font-medium text-gray-700">店舗を公開する</span>
-                    </label>
+                    </div>
+
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        ジャンル
+                      </label>
+                      <select
+                        name="genre_id"
+                        value={formData.genre_id || ''}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      >
+                        <option value="">選択してください</option>
+                        {masterData.genres.map(genre => (
+                          <option key={genre.id} value={genre.id}>
+                            {genre.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        キャッチコピー
+                      </label>
+                      <input
+                        type="text"
+                        name="catch_copy"
+                        value={formData.catch_copy || ''}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="例: 本格的な江戸前寿司をカジュアルに"
+                      />
+                    </div>
+
+                    <div className="lg:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        店舗説明
+                      </label>
+                      <textarea
+                        name="description"
+                        value={formData.description || ''}
+                        onChange={handleInputChange}
+                        rows={4}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="店舗の特徴や魅力を記入"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        住所 <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="address"
+                        value={formData.address || ''}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
                   </div>
+                </div>
+
+                {/* 立地・アクセスセクション */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">立地・アクセス</h3>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="relative">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        最寄り駅
+                      </label>
+                      <input
+                        type="text"
+                        name="station"
+                        value={formData.station || ''}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="駅名を入力"
+                      />
+                      {showStationSuggestions && stationSuggestions.length > 0 && (
+                        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-80 overflow-y-auto">
+                          {stationSuggestions.map(station => (
+                            <div key={station.id} className="border-b border-gray-100 last:border-b-0">
+                              <div className="px-3 py-2 font-medium text-gray-800 bg-gray-50">
+                                {station.name}駅
+                              </div>
+                              {station.railway_lines.length > 1 ? (
+                                <div className="px-3 pb-2">
+                                  <div className="text-xs text-gray-500 mb-1 pt-1">路線を選択してください：</div>
+                                  {station.railway_lines.map((line) => (
+                                    <button
+                                      key={`${station.id}-${line}`}
+                                      type="button"
+                                      onClick={() => handleStationSelect(station, line)}
+                                      className="w-full text-left px-2 py-1 ml-2 text-sm hover:bg-indigo-50 cursor-pointer rounded border-l-2 border-indigo-200 mb-1"
+                                    >
+                                      {line}線 {station.name}駅
+                                    </button>
+                                  ))}
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => handleStationSelect(station)}
+                                  className="w-full text-left px-3 py-1 text-sm hover:bg-gray-100 cursor-pointer"
+                                >
+                                  {station.railway_lines[0] || ''}線 {station.name}駅
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="relative">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        路線
+                      </label>
+                      <input
+                        type="text"
+                        name="station_line"
+                        value={formData.station_line || ''}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="路線名を入力"
+                      />
+                      {showRailwaySuggestions && railwaySuggestions.length > 0 && (
+                        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
+                          {railwaySuggestions.map(line => (
+                            <button
+                              key={line}
+                              type="button"
+                              onClick={() => handleRailwaySelect(line)}
+                              className="w-full px-3 py-2 text-left hover:bg-gray-100 focus:bg-gray-100"
+                            >
+                              {line}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        駅からの距離
+                      </label>
+                      <input
+                        type="text"
+                        name="station_distance"
+                        value={formData.station_distance || ''}
+                        onChange={handleInputChange}
+                        placeholder="例: 徒歩5分"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+
+                  </div>
+                </div>
+
+                {/* 営業情報セクション */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">営業情報</h3>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-3">
+                        営業時間
+                      </label>
+                      <div className="space-y-3">
+                        {Object.entries(dayNames).map(([dayKey, dayLabel]) => {
+                          const closedFieldName = `hours_${dayKey}_closed` as keyof Store;
+                          const openFieldName = `hours_${dayKey}_open` as keyof Store;
+                          const closeFieldName = `hours_${dayKey}_close` as keyof Store;
+                          const isClosed = formData[closedFieldName] as boolean || false;
+
+                          return (
+                            <div key={dayKey} className="flex items-center space-x-3">
+                              <div className="w-24 font-medium text-sm">{dayLabel}</div>
+                              <label className="flex items-center">
+                                <input
+                                  type="checkbox"
+                                  name={closedFieldName}
+                                  checked={isClosed}
+                                  onChange={handleInputChange}
+                                  className="mr-2"
+                                />
+                                <span className="text-sm">定休日</span>
+                              </label>
+                              {!isClosed && (
+                                <>
+                                  <input
+                                    type="time"
+                                    name={openFieldName}
+                                    value={formData[openFieldName] as string || '11:00'}
+                                    onChange={handleInputChange}
+                                    className="px-2 py-1 border border-gray-300 rounded"
+                                  />
+                                  <span>〜</span>
+                                  <input
+                                    type="time"
+                                    name={closeFieldName}
+                                    value={formData[closeFieldName] as string || '23:00'}
+                                    onChange={handleInputChange}
+                                    className="px-2 py-1 border border-gray-300 rounded"
+                                  />
+                                </>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        電話番号
+                      </label>
+                      <input
+                        type="tel"
+                        name="phone_number"
+                        value={formData.phone_number || ''}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="03-1234-5678"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">※ お客様向けに掲載される電話番号です</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        座席数
+                      </label>
+                      <input
+                        type="text"
+                        name="seating_capacity"
+                        value={formData.seating_capacity || ''}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="例: 30席（カウンター10席、テーブル20席）"
+                      />
+                    </div>
+
+                    <div className="lg:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        支払い方法
+                      </label>
+                      <input
+                        type="text"
+                        name="payment_methods"
+                        value={formData.payment_methods || ''}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="例: 現金、クレジットカード（VISA、MasterCard、JCB）、PayPay"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* SNS・Webセクション */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">SNS・Web</h3>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        ウェブサイト
+                      </label>
+                      <input
+                        type="url"
+                        name="website_url"
+                        value={formData.website_url || ''}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="https://example.com"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Instagram
+                      </label>
+                      <input
+                        type="url"
+                        name="instagram_url"
+                        value={formData.instagram_url || ''}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="https://instagram.com/username"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Facebook
+                      </label>
+                      <input
+                        type="url"
+                        name="facebook_url"
+                        value={formData.facebook_url || ''}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="https://facebook.com/pagename"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        X (Twitter)
+                      </label>
+                      <input
+                        type="url"
+                        name="x_twitter_url"
+                        value={formData.x_twitter_url || ''}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="https://x.com/username"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        LINE
+                      </label>
+                      <input
+                        type="url"
+                        name="line_url"
+                        value={formData.line_url || ''}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="https://line.me/ti/p/..."
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        TikTok
+                      </label>
+                      <input
+                        type="url"
+                        name="tiktok_url"
+                        value={formData.tiktok_url || ''}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="https://tiktok.com/@username"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="lg:col-span-2">
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      name="is_active"
+                      checked={formData.is_active ?? true}
+                      onChange={handleInputChange}
+                      className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                    <span className="text-sm font-medium text-gray-700">店舗を公開する</span>
+                  </label>
                 </div>
               </div>
             )}
@@ -1098,7 +1396,28 @@ export default function OwnerEditPage() {
             {/* 連絡先タブ */}
             {activeTab === 'contact' && (
               <div className="space-y-6">
+                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+                  <p className="text-sm text-yellow-700">
+                    <strong>ご注意：</strong>こちらの連絡先情報は株式会社GAから店舗様へご連絡する際に使用いたします。
+                    お客様向けの連絡先は「基本情報」タブの営業情報セクションにてご登録ください。
+                  </p>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      連絡用電話番号
+                    </label>
+                    <input
+                      type="tel"
+                      name="contact_phone_for_ga"
+                      value={formData.contact_phone_for_ga || ''}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      placeholder="03-9876-5432"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">※ GA社から店舗様への連絡用電話番号</p>
+                  </div>
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       メールアドレス
@@ -1109,7 +1428,9 @@ export default function OwnerEditPage() {
                       value={formData.email || ''}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      placeholder="contact@example.com"
                     />
+                    <p className="text-xs text-gray-500 mt-1">※ GA社からの重要なご連絡に使用します</p>
                   </div>
 
                   <div>
@@ -1122,7 +1443,9 @@ export default function OwnerEditPage() {
                       value={formData.line_id || ''}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      placeholder="@store_contact"
                     />
+                    <p className="text-xs text-gray-500 mt-1">※ GA社からの迅速なご連絡に使用します</p>
                   </div>
                 </div>
               </div>

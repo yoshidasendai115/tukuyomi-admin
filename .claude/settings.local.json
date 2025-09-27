@@ -25,7 +25,9 @@
       "Bash(PGPASSWORD=postgres psql:*)",
       "Bash(export PGPASSWORD=postgres)",
       "Bash(npm run build:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []

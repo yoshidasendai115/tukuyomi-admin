@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { supabaseAdmin } from '@/lib/supabase';
 
 interface Store {
   id: string;
@@ -14,6 +13,9 @@ interface Store {
   address: string;
   phone: string;
   is_active: boolean;
+  is_recommended: boolean;
+  priority_score: number;
+  recommendation_reason?: string;
   created_at: string;
   updated_at: string;
 }
@@ -41,7 +43,6 @@ interface Pagination {
 }
 
 export default function StoresPage() {
-  const router = useRouter();
   const [stores, setStores] = useState<Store[]>([]);
   const [areas, setAreas] = useState<Area[]>([]);
   const [genres, setGenres] = useState<Genre[]>([]);
@@ -254,6 +255,9 @@ export default function StoresPage() {
                   対象店舗
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  優先表示
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   操作
                 </th>
               </tr>
@@ -292,6 +296,25 @@ export default function StoresPage() {
                     >
                       {store.is_active ? '有効' : '無効'}
                     </button>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => handleRecommendToggle(store.id, store.is_recommended)}
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          store.is_recommended
+                            ? 'bg-yellow-400 text-yellow-900'
+                            : 'bg-gray-100 text-gray-600'
+                        }`}
+                      >
+                        {store.is_recommended ? '★ おすすめ' : '通常'}
+                      </button>
+                      {store.is_recommended && (
+                        <span className="text-xs text-gray-500">
+                          優先度: {store.priority_score}
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <Link
@@ -421,6 +444,75 @@ export default function StoresPage() {
           </div>
         )}
       </div>
+
+      {/* おすすめ設定モーダル */}
+      {showRecommendModal && selectedStore && (
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-lg font-bold mb-4">おすすめ店舗に設定</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              「{selectedStore.name}」をおすすめ店舗に設定します
+            </p>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                優先度スコア (0-100)
+              </label>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                value={priorityScore}
+                onChange={(e) => setPriorityScore(Number(e.target.value))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                数値が大きいほど優先的に表示されます
+              </p>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                おすすめ理由（任意）
+              </label>
+              <textarea
+                value={recommendationReason}
+                onChange={(e) => setRecommendationReason(e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900"
+                placeholder="例：雰囲気が良く、初心者にもおすすめ"
+              />
+            </div>
+
+            <div className="flex justify-end space-x-2">
+              <button
+                onClick={() => {
+                  setShowRecommendModal(false);
+                  setSelectedStore(null);
+                }}
+                className="px-4 py-2 text-sm text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={() => {
+                  if (selectedStore) {
+                    handleRecommendUpdate(
+                      selectedStore.id,
+                      true,
+                      priorityScore,
+                      recommendationReason
+                    );
+                  }
+                }}
+                className="px-4 py-2 text-sm text-white bg-yellow-600 rounded-md hover:bg-yellow-700"
+              >
+                設定する
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

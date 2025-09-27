@@ -97,7 +97,12 @@ export async function PATCH(
       'minimum_hourly_wage',
       'maximum_hourly_wage',
       'recruitment_status',
-      'recruitment_message'
+      'recruitment_message',
+      'is_recommended',
+      'priority_score',
+      'recommendation_reason',
+      'recommended_at',
+      'recommended_by'
     ];
 
     for (const field of allowedFields) {

@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
       'google_place_id', 'google_maps_uri', 'latitude', 'longitude',
       'price_level', 'website', 'rating', 'review_count', 'area',
       'features', 'genre', 'opening_hours_text', 'tags', 'view_count',
-      'owner_id', 'email', 'line_id', 'minimum_hourly_wage', 'maximum_hourly_wage',
+      'owner_id', 'email', 'line_id', 'contact_phone_for_ga', 'minimum_hourly_wage', 'maximum_hourly_wage',
       'average_daily_income', 'average_monthly_income', 'work_system',
       'recruitment_status', 'treatment_benefits', 'working_conditions',
       'dress_code', 'target_age_min', 'target_age_max', 'recruitment_message',

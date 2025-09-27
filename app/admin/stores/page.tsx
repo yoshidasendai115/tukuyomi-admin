@@ -52,6 +52,10 @@ export default function StoresPage() {
   const [selectedGenre, setSelectedGenre] = useState('');
   const [showInactive, setShowInactive] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showRecommendModal, setShowRecommendModal] = useState(false);
+  const [selectedStore, setSelectedStore] = useState<Store | null>(null);
+  const [priorityScore, setPriorityScore] = useState(50);
+  const [recommendationReason, setRecommendationReason] = useState('');
   const [pagination, setPagination] = useState<Pagination>({
     total: 0,
     page: 1,
@@ -119,6 +123,45 @@ export default function StoresPage() {
       }
     } catch (error) {
       console.error('Error updating store status:', error);
+    }
+  };
+
+  const handleRecommendToggle = (storeId: string, currentIsRecommended: boolean) => {
+    const store = stores.find(s => s.id === storeId);
+    if (!store) return;
+
+    if (currentIsRecommended) {
+      // おすすめを解除
+      handleRecommendUpdate(storeId, false, 0, '');
+    } else {
+      // おすすめ設定モーダルを表示
+      setSelectedStore(store);
+      setPriorityScore(50);
+      setRecommendationReason('');
+      setShowRecommendModal(true);
+    }
+  };
+
+  const handleRecommendUpdate = async (storeId: string, isRecommended: boolean, score: number, reason: string) => {
+    try {
+      const response = await fetch(`/api/stores/${storeId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          is_recommended: isRecommended,
+          priority_score: score,
+          recommendation_reason: reason,
+          recommended_at: isRecommended ? new Date().toISOString() : null
+        })
+      });
+
+      if (response.ok) {
+        fetchData(currentPage); // 再読み込み
+        setShowRecommendModal(false);
+        setSelectedStore(null);
+      }
+    } catch (error) {
+      console.error('Error updating recommendation status:', error);
     }
   };
 

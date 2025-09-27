@@ -58,6 +58,7 @@ export default function StoresPage() {
   const [selectedArea, setSelectedArea] = useState(searchParams.get('area') || '');
   const [selectedGenre, setSelectedGenre] = useState(searchParams.get('genre') || '');
   const [showInactive, setShowInactive] = useState(searchParams.get('showInactive') === 'true');
+  const [showRecommendedOnly, setShowRecommendedOnly] = useState(searchParams.get('showRecommendedOnly') === 'true');
   const [areaInput, setAreaInput] = useState(searchParams.get('area') || '');
   const [showAreaSuggestions, setShowAreaSuggestions] = useState(false);
   const [filteredAreas, setFilteredAreas] = useState<Area[]>([]);
@@ -128,7 +129,7 @@ export default function StoresPage() {
 
   useEffect(() => {
     fetchData();
-  }, [currentPage, searchTerm, selectedArea, selectedGenre, showInactive]);
+  }, [currentPage, searchTerm, selectedArea, selectedGenre, showInactive, showRecommendedOnly]);
 
   // フィルター変更時にURLパラメータを更新
   useEffect(() => {
@@ -138,11 +139,12 @@ export default function StoresPage() {
     if (selectedArea) params.set('area', selectedArea);
     if (selectedGenre) params.set('genre', selectedGenre);
     if (showInactive) params.set('showInactive', 'true');
+    if (showRecommendedOnly) params.set('showRecommendedOnly', 'true');
     if (currentPage > 1) params.set('page', currentPage.toString());
 
     const newUrl = `${window.location.pathname}?${params.toString()}`;
     router.replace(newUrl);
-  }, [searchTerm, selectedArea, selectedGenre, showInactive, currentPage, router]);
+  }, [searchTerm, selectedArea, selectedGenre, showInactive, showRecommendedOnly, currentPage, router]);
 
   useEffect(() => {
     // 検索条件が変更されたらページをリセット
@@ -165,7 +167,8 @@ export default function StoresPage() {
         search: searchTerm,
         area: selectedArea,
         genre: selectedGenre,
-        showInactive: showInactive.toString()
+        showInactive: showInactive.toString(),
+        showRecommendedOnly: showRecommendedOnly.toString()
       });
 
       // 初回のみマスタデータも取得
@@ -280,9 +283,10 @@ export default function StoresPage() {
     if (selectedArea) params.set('area', selectedArea);
     if (selectedGenre) params.set('genre', selectedGenre);
     if (showInactive) params.set('showInactive', 'true');
+    if (showRecommendedOnly) params.set('showRecommendedOnly', 'true');
     if (currentPage > 1) params.set('page', currentPage.toString());
     return params.toString();
-  }, [searchTerm, selectedArea, selectedGenre, showInactive, currentPage]);
+  }, [searchTerm, selectedArea, selectedGenre, showInactive, showRecommendedOnly, currentPage]);
 
   const handleRecommendUpdate = async (storeId: string, isRecommended: boolean, score: number, reason: string) => {
     try {
@@ -306,6 +310,7 @@ export default function StoresPage() {
       console.error('Error updating recommendation status:', error);
     }
   };
+
 
   // APIでフィルタリング済みなので、storesをそのまま使用
   const filteredStores = stores;
@@ -437,6 +442,18 @@ export default function StoresPage() {
                   無効な店舗も表示
                 </label>
               </div>
+              <div className="flex items-center h-10">
+                <input
+                  type="checkbox"
+                  id="show-recommended-only"
+                  checked={showRecommendedOnly}
+                  onChange={(e) => setShowRecommendedOnly(e.target.checked)}
+                  className="mr-2"
+                />
+                <label htmlFor="show-recommended-only" className="text-sm text-gray-700">
+                  優先度設定ありのみ
+                </label>
+              </div>
             </div>
           </div>
         </div>
@@ -524,9 +541,10 @@ export default function StoresPage() {
                         {store.is_recommended ? '★ おすすめ' : '通常'}
                       </button>
                       {store.is_recommended && (
-                        <span className="text-xs text-gray-500">
-                          優先度: {store.priority_score}
-                        </span>
+                        <div className="flex items-center space-x-1">
+                          <span className="text-xs text-gray-500">優先度:</span>
+                          <span className="text-xs font-medium text-gray-900">{store.priority_score}</span>
+                        </div>
                       )}
                     </div>
                   </td>

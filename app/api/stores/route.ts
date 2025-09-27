@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
     const area = searchParams.get('area') || '';
     const genre = searchParams.get('genre') || '';
     const showInactive = searchParams.get('showInactive') === 'true';
+    const showRecommendedOnly = searchParams.get('showRecommendedOnly') === 'true';
     const offset = (page - 1) * limit;
 
     // 基本クエリを構築
@@ -58,6 +59,12 @@ export async function GET(request: NextRequest) {
     if (!showInactive) {
       countQuery = countQuery.eq('is_active', true);
       dataQuery = dataQuery.eq('is_active', true);
+    }
+
+    // おすすめ店舗フィルタ（showRecommendedOnlyがtrueの場合のみおすすめ店舗を表示）
+    if (showRecommendedOnly) {
+      countQuery = countQuery.eq('is_recommended', true);
+      dataQuery = dataQuery.eq('is_recommended', true);
     }
 
     // 総数を取得

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 interface Store {
@@ -30,6 +30,7 @@ interface Store {
 export default function StoreDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [store, setStore] = useState<Store | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -71,7 +72,7 @@ export default function StoreDetailPage() {
       <div className="min-h-screen bg-gray-50 p-8">
         <div className="text-center">
           <p className="text-gray-600">店舗情報が見つかりません</p>
-          <Link href="/admin/stores" className="mt-4 text-indigo-600 hover:text-indigo-500">
+          <Link href={searchParams.toString() ? `/admin/stores?${searchParams.toString()}` : '/admin/stores'} className="mt-4 text-indigo-600 hover:text-indigo-500">
             店舗一覧に戻る
           </Link>
         </div>
@@ -93,7 +94,7 @@ export default function StoreDetailPage() {
               編集
             </Link>
             <Link
-              href="/admin/stores"
+              href={searchParams.toString() ? `/admin/stores?${searchParams.toString()}` : '/admin/stores'}
               className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
             >
               一覧に戻る

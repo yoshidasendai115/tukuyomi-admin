@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 interface Store {
@@ -43,17 +43,27 @@ interface Pagination {
 }
 
 export default function StoresPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [stores, setStores] = useState<Store[]>([]);
   const [areas, setAreas] = useState<Area[]>([]);
   const [genres, setGenres] = useState<Genre[]>([]);
   const [isInitialLoading, setIsInitialLoading] = useState(true); // 初回ロードのみ
   const [isUpdating, setIsUpdating] = useState(false); // データ更新中の表示
-  const [searchTerm, setSearchTerm] = useState('');
-  const [searchInput, setSearchInput] = useState(''); // 入力用の状態を別に管理
-  const [selectedArea, setSelectedArea] = useState('');
-  const [selectedGenre, setSelectedGenre] = useState('');
-  const [showInactive, setShowInactive] = useState(false);
+
+  // URLパラメータから初期値を取得
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
+  const [searchInput, setSearchInput] = useState(searchParams.get('search') || ''); // 入力用の状態を別に管理
+  const [selectedArea, setSelectedArea] = useState(searchParams.get('area') || '');
+  const [selectedGenre, setSelectedGenre] = useState(searchParams.get('genre') || '');
+  const [showInactive, setShowInactive] = useState(searchParams.get('showInactive') === 'true');
+  const [areaInput, setAreaInput] = useState(searchParams.get('area') || '');
+  const [showAreaSuggestions, setShowAreaSuggestions] = useState(false);
+  const [filteredAreas, setFilteredAreas] = useState<Area[]>([]);
+  const [isAreaInputFocused, setIsAreaInputFocused] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const areaInputRef = useRef<HTMLDivElement>(null);
   const [showRecommendModal, setShowRecommendModal] = useState(false);
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [priorityScore, setPriorityScore] = useState(50);
@@ -86,9 +96,53 @@ export default function StoresPage() {
     };
   }, [searchInput]);
 
+  // エリア入力のフィルタリング
+  useEffect(() => {
+    if (areaInput.trim() === '') {
+      setFilteredAreas([]);
+      setShowAreaSuggestions(false);
+    } else {
+      const filtered = areas.filter(area =>
+        area.name.toLowerCase().includes(areaInput.toLowerCase())
+      );
+      setFilteredAreas(filtered);
+      // フォーカスされている時のみサジェストリストを表示
+      setShowAreaSuggestions(isAreaInputFocused && filtered.length > 0);
+    }
+  }, [areaInput, areas, isAreaInputFocused]);
+
+  // 外側クリックでサジェストを閉じる
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (areaInputRef.current && !areaInputRef.current.contains(event.target as Node)) {
+        setShowAreaSuggestions(false);
+        setIsAreaInputFocused(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   useEffect(() => {
     fetchData();
   }, [currentPage, searchTerm, selectedArea, selectedGenre, showInactive]);
+
+  // フィルター変更時にURLパラメータを更新
+  useEffect(() => {
+    const params = new URLSearchParams();
+
+    if (searchTerm) params.set('search', searchTerm);
+    if (selectedArea) params.set('area', selectedArea);
+    if (selectedGenre) params.set('genre', selectedGenre);
+    if (showInactive) params.set('showInactive', 'true');
+    if (currentPage > 1) params.set('page', currentPage.toString());
+
+    const newUrl = `${window.location.pathname}?${params.toString()}`;
+    router.replace(newUrl);
+  }, [searchTerm, selectedArea, selectedGenre, showInactive, currentPage, router]);
 
   useEffect(() => {
     // 検索条件が変更されたらページをリセット
@@ -205,6 +259,31 @@ export default function StoresPage() {
     }
   };
 
+  const handleAreaSelect = (areaName: string) => {
+    setSelectedArea(areaName);
+    setAreaInput(areaName);
+    setShowAreaSuggestions(false);
+    setIsAreaInputFocused(false);
+  };
+
+  const handleAreaClear = () => {
+    setSelectedArea('');
+    setAreaInput('');
+    setShowAreaSuggestions(false);
+    setIsAreaInputFocused(false);
+  };
+
+  // 現在のフィルター状態を含むクエリパラメータを取得
+  const getCurrentFilterParams = useCallback(() => {
+    const params = new URLSearchParams();
+    if (searchTerm) params.set('search', searchTerm);
+    if (selectedArea) params.set('area', selectedArea);
+    if (selectedGenre) params.set('genre', selectedGenre);
+    if (showInactive) params.set('showInactive', 'true');
+    if (currentPage > 1) params.set('page', currentPage.toString());
+    return params.toString();
+  }, [searchTerm, selectedArea, selectedGenre, showInactive, currentPage]);
+
   const handleRecommendUpdate = async (storeId: string, isRecommended: boolean, score: number, reason: string) => {
     try {
       const response = await fetch(`/api/stores/${storeId}`, {
@@ -301,20 +380,45 @@ export default function StoresPage() {
               </select>
             </div>
 
-            <div>
+            <div className="relative">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 駅
               </label>
-              <select
-                value={selectedArea}
-                onChange={(e) => setSelectedArea(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900"
-              >
-                <option value="">すべての駅</option>
-                {areaOptions.map(area => (
-                  <option key={area.id} value={area.name}>{area.name}</option>
-                ))}
-              </select>
+              <div className="relative" ref={areaInputRef}>
+                <input
+                  type="text"
+                  value={areaInput}
+                  onChange={(e) => setAreaInput(e.target.value)}
+                  onFocus={() => setIsAreaInputFocused(true)}
+                  onBlur={() => {
+                    // 少し遅延させて、クリック処理を待つ
+                    setTimeout(() => setIsAreaInputFocused(false), 150);
+                  }}
+                  placeholder="駅名を入力してください"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 pr-8"
+                />
+                {selectedArea && (
+                  <button
+                    onClick={handleAreaClear}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    ×
+                  </button>
+                )}
+                {showAreaSuggestions && filteredAreas.length > 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                    {filteredAreas.map(area => (
+                      <button
+                        key={area.id}
+                        onClick={() => handleAreaSelect(area.name)}
+                        className="w-full px-3 py-2 text-left hover:bg-gray-100 text-gray-900 border-b border-gray-100 last:border-b-0"
+                      >
+                        {area.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div>
@@ -429,13 +533,13 @@ export default function StoresPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium min-w-28">
                     <div className="flex flex-col space-y-2">
                       <Link
-                        href={`/admin/stores/${store.id}`}
+                        href={`/admin/stores/${store.id}?${getCurrentFilterParams()}`}
                         className="text-indigo-600 hover:text-indigo-900"
                       >
                         詳細
                       </Link>
                       <Link
-                        href={`/admin/stores/${store.id}/edit`}
+                        href={`/admin/stores/${store.id}/edit?${getCurrentFilterParams()}`}
                         className="text-indigo-600 hover:text-indigo-900"
                       >
                         編集

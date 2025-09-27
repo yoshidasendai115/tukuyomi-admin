@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 
 
@@ -128,6 +128,7 @@ interface PageProps {
 
 export default function AdminStoreEditPage({ params }: PageProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [storeId, setStoreId] = useState<string>('');
   const [paramsLoaded, setParamsLoaded] = useState(false);
 
@@ -689,7 +690,11 @@ export default function AdminStoreEditPage({ params }: PageProps) {
                 {isAdminMode && (
                   <button
                     type="button"
-                    onClick={() => router.push('/admin/stores')}
+                    onClick={() => {
+                      const currentParams = searchParams.toString();
+                      const returnUrl = currentParams ? `/admin/stores?${currentParams}` : '/admin/stores';
+                      router.push(returnUrl);
+                    }}
                     className="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
                   >
                     一覧に戻る

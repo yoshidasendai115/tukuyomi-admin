@@ -166,8 +166,8 @@ export default function StoresPage() {
   };
 
   const filteredStores = stores.filter(store => {
-    const matchesSearch = store.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          store.name_kana.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = store.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          store.name_kana?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
     const matchesArea = !selectedArea || store.area === selectedArea;
     const matchesGenre = !selectedGenre || store.genre === selectedGenre;
     const matchesActive = showInactive || store.is_active;

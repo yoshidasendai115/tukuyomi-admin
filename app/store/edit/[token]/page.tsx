@@ -30,8 +30,14 @@ interface TokenInfo {
   expires_at: string | null;
 }
 
-export default function TokenEditPage({ params }: { params: { token: string } }) {
+interface PageProps {
+  params: Promise<{ token: string }>;
+}
+
+export default function TokenEditPage({ params }: PageProps) {
   const router = useRouter();
+  const [token, setToken] = useState<string>('');
+  const [paramsLoaded, setParamsLoaded] = useState(false);
   const [storeData, setStoreData] = useState<StoreData>({
     id: '',
     name: '',
@@ -58,8 +64,20 @@ export default function TokenEditPage({ params }: { params: { token: string } })
   const [tokenInfo, setTokenInfo] = useState<TokenInfo | null>(null);
 
   useEffect(() => {
-    validateTokenAndFetch();
+    // Paramsを展開
+    params.then((p) => {
+      setToken(p.token);
+      setParamsLoaded(true);
+    });
+  }, [params]);
 
+  useEffect(() => {
+    if (paramsLoaded && token) {
+      validateTokenAndFetch();
+    }
+  }, [token, paramsLoaded]);
+
+  useEffect(() => {
     // 自動保存（5分ごと）
     const autoSaveInterval = setInterval(() => {
       if (tokenValid) {
@@ -78,7 +96,7 @@ export default function TokenEditPage({ params }: { params: { token: string } })
       const { data: tokenData, error: tokenError } = await supabase
         .from('admin_store_edit_tokens')
         .select('*')
-        .eq('token', params.token)
+        .eq('token', token)
         .eq('is_active', true)
         .single();
 

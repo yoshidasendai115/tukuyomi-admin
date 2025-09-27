@@ -21,17 +21,50 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
+    const search = searchParams.get('search') || '';
+    const area = searchParams.get('area') || '';
+    const genre = searchParams.get('genre') || '';
+    const showInactive = searchParams.get('showInactive') === 'true';
     const offset = (page - 1) * limit;
 
-    // 総数を取得
-    const { count: totalCount } = await supabaseAdmin
-      .from('stores')
-      .select('*', { count: 'exact', head: true });
+    // 基本クエリを構築
+    let countQuery = supabaseAdmin.from('stores').select('*', { count: 'exact', head: true });
+    let dataQuery = supabaseAdmin.from('stores').select('*');
 
-    // 店舗一覧を取得（ページネーション付き）
-    const { data, error } = await supabaseAdmin
-      .from('stores')
-      .select('*')
+    // 検索条件を適用（連続文字列として検索）
+    if (search) {
+      // 前後の空白を除去し、そのまま部分一致検索（大文字小文字を区別しない）
+      const searchTerm = search.trim();
+      if (searchTerm) {
+        // ilikeで大文字小文字を区別せずに部分一致検索
+        countQuery = countQuery.ilike('name', `%${searchTerm}%`);
+        dataQuery = dataQuery.ilike('name', `%${searchTerm}%`);
+      }
+    }
+
+    // エリアフィルタ
+    if (area) {
+      countQuery = countQuery.eq('area', area);
+      dataQuery = dataQuery.eq('area', area);
+    }
+
+    // ジャンルフィルタ
+    if (genre) {
+      countQuery = countQuery.eq('genre', genre);
+      dataQuery = dataQuery.eq('genre', genre);
+    }
+
+    // アクティブ状態フィルタ（showInactiveがfalseの場合のみアクティブな店舗を表示）
+    if (!showInactive) {
+      countQuery = countQuery.eq('is_active', true);
+      dataQuery = dataQuery.eq('is_active', true);
+    }
+
+    // 総数を取得
+    const { count: totalCount } = await countQuery;
+
+    // データを取得（ページネーション付き）
+    const { data, error } = await dataQuery
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 

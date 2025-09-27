@@ -22,8 +22,14 @@ interface StoreData {
   recruitment_message: string;
 }
 
-export default function StoreEditPage({ params }: { params: { uuid: string } }) {
+interface PageProps {
+  params: Promise<{ uuid: string }>;
+}
+
+export default function StoreEditPage({ params }: PageProps) {
   const router = useRouter();
+  const [uuid, setUuid] = useState<string>('');
+  const [paramsLoaded, setParamsLoaded] = useState(false);
   const [storeData, setStoreData] = useState<StoreData>({
     id: '',
     name: '',
@@ -48,25 +54,35 @@ export default function StoreEditPage({ params }: { params: { uuid: string } }) 
   const [messageType, setMessageType] = useState<'success' | 'error' | ''>('');
 
   useEffect(() => {
-    checkSession();
-    fetchStoreData();
+    // Paramsを展開
+    params.then((p) => {
+      setUuid(p.uuid);
+      setParamsLoaded(true);
+    });
+  }, [params]);
 
-    // 自動保存（5分ごと）
-    const autoSaveInterval = setInterval(() => {
-      handleSave(true);
-    }, 5 * 60 * 1000);
+  useEffect(() => {
+    if (paramsLoaded && uuid) {
+      checkSession();
+      fetchStoreData();
 
-    // セッションタイムアウト（2時間）
-    const sessionTimeout = setTimeout(() => {
-      sessionStorage.clear();
-      router.push(`/store/${params.uuid}/login`);
-    }, 2 * 60 * 60 * 1000);
+      // 自動保存（5分ごと）
+      const autoSaveInterval = setInterval(() => {
+        handleSave(true);
+      }, 5 * 60 * 1000);
 
-    return () => {
-      clearInterval(autoSaveInterval);
-      clearTimeout(sessionTimeout);
-    };
-  }, []);
+      // セッションタイムアウト（2時間）
+      const sessionTimeout = setTimeout(() => {
+        sessionStorage.clear();
+        router.push(`/store/${uuid}/login`);
+      }, 2 * 60 * 60 * 1000);
+
+      return () => {
+        clearInterval(autoSaveInterval);
+        clearTimeout(sessionTimeout);
+      };
+    }
+  }, [uuid, paramsLoaded]);
 
   const checkSession = () => {
     // セッションチェック
@@ -74,8 +90,8 @@ export default function StoreEditPage({ params }: { params: { uuid: string } }) 
     const storeUuid = sessionStorage.getItem('store_uuid');
     const authTimestamp = sessionStorage.getItem('auth_timestamp');
 
-    if (!authenticated || storeUuid !== params.uuid) {
-      router.push(`/store/${params.uuid}/login`);
+    if (!authenticated || storeUuid !== uuid) {
+      router.push(`/store/${uuid}/login`);
       return;
     }
 
@@ -87,7 +103,7 @@ export default function StoreEditPage({ params }: { params: { uuid: string } }) 
 
       if (hoursDiff > 2) {
         sessionStorage.clear();
-        router.push(`/store/${params.uuid}/login`);
+        router.push(`/store/${uuid}/login`);
         return;
       }
     }

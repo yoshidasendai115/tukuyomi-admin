@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 
 
@@ -119,10 +119,14 @@ interface Store {
   hours_sunday_closed?: boolean;
 }
 
-export default function OwnerEditPage() {
-  const params = useParams();
+interface PageProps {
+  params: Promise<{ token: string }>;
+}
+
+export default function OwnerEditPage({ params }: PageProps) {
   const router = useRouter();
-  const token = params.token as string;
+  const [token, setToken] = useState<string>('');
+  const [paramsLoaded, setParamsLoaded] = useState(false);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isValidToken, setIsValidToken] = useState(false);
@@ -186,12 +190,33 @@ export default function OwnerEditPage() {
   const [additionalImagePreviews, setAdditionalImagePreviews] = useState<(string | null)[]>([null, null, null]);
 
   useEffect(() => {
-    checkAuthAndValidateToken();
-  }, [token]);
+    // Paramsを展開
+    params.then((p) => {
+      setToken(p.token);
+      setParamsLoaded(true);
+    });
+  }, [params]);
+
+  useEffect(() => {
+    if (paramsLoaded && token) {
+      checkAuthAndValidateToken();
+    }
+  }, [token, paramsLoaded]);
 
   const checkAuthAndValidateToken = async () => {
     try {
-      // まず認証状態を確認
+      // UUIDパターンをチェック（store IDの場合）
+      const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const isStoreId = uuidPattern.test(token);
+
+      if (isStoreId) {
+        // Store IDの場合、管理者ページへリダイレクト
+        console.log('Store ID detected, redirecting to admin page:', token);
+        router.push(`/admin/stores/${token}/edit`);
+        return;
+      }
+
+      // トークンの場合、通常の認証フロー
       const authResponse = await fetch(`/api/owner/check-auth`, {
         method: 'POST',
         headers: {
@@ -413,6 +438,22 @@ export default function OwnerEditPage() {
 
   // お気に入り登録ユーザーを取得
   const fetchFavoriteUsers = async (storeId: string) => {
+    // 管理者モードの場合はAPIを使わずに直接データベースからお気に入り数を取得
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (uuidPattern.test(token)) {
+      console.log('Admin mode: fetching favorite users count');
+      try {
+        const response = await fetch(`/api/admin/favorite-count?storeId=${storeId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setFavoriteUsers(data.users || []);
+        }
+      } catch (error) {
+        console.error('Error fetching favorite count in admin mode:', error);
+      }
+      return;
+    }
+
     try {
       const response = await fetch(
         `/api/owner/favorite-users?storeId=${storeId}&token=${token}`
@@ -428,6 +469,13 @@ export default function OwnerEditPage() {
 
   // メッセージ送信履歴を取得
   const fetchMessageHistory = async (storeId: string) => {
+    // 管理者モードの場合はスキップ
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (uuidPattern.test(token)) {
+      console.log('Skipping message history fetch in admin mode');
+      return;
+    }
+
     try {
       const response = await fetch(
         `/api/owner/send-message?storeId=${storeId}&token=${token}`
@@ -550,6 +598,10 @@ export default function OwnerEditPage() {
     try {
       let updatedFormData = { ...formData };
 
+      // UUIDパターンをチェック（store IDの場合は管理者権限で保存）
+      const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const isStoreId = uuidPattern.test(token);
+
       // メイン画像のアップロード
       if (mainImageFile) {
         const formDataImg = new FormData();
@@ -597,21 +649,36 @@ export default function OwnerEditPage() {
         updatedFormData.additional_images = uploadedAdditionalImages;
       }
 
-      // 店舗情報を更新
-      const response = await fetch('/api/owner/update-store', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          token,
-          storeId: store?.id,
-          ...updatedFormData
-        }),
-      });
+      // 管理者権限の場合は直接APIを使って更新
+      if (isStoreId) {
+        const response = await fetch(`/api/stores/${store?.id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(updatedFormData),
+        });
 
-      if (!response.ok) {
-        throw new Error('Failed to update store');
+        if (!response.ok) {
+          throw new Error('Failed to update store');
+        }
+      } else {
+        // トークンベースの場合は通常の更新API
+        const response = await fetch('/api/owner/update-store', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            token,
+            storeId: store?.id,
+            ...updatedFormData
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to update store');
+        }
       }
 
       alert('店舗情報を更新しました');
@@ -679,15 +746,48 @@ export default function OwnerEditPage() {
     sunday: '日曜日'
   };
 
+  // UUIDパターンをチェック（管理者権限モードかどうか）
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const isAdminMode = uuidPattern.test(token);
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-6xl mx-auto px-4">
         <div className="bg-white rounded-lg shadow-lg">
           <div className="p-6 border-b">
-            <h1 className="text-2xl font-bold text-gray-900">店舗情報編集</h1>
-            <p className="mt-2 text-sm text-gray-600">
-              {formData.name} の店舗情報を編集できます
-            </p>
+            <div className="flex justify-between items-start">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">店舗情報編集</h1>
+                <p className="mt-2 text-sm text-gray-600">
+                  {formData.name} の店舗情報を編集できます
+                </p>
+              </div>
+              <div className="flex gap-2">
+                {/* 管理者モードの場合は一覧に戻るボタンを表示 */}
+                {isAdminMode && (
+                  <button
+                    type="button"
+                    onClick={() => router.push('/admin/stores')}
+                    className="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                  >
+                    一覧に戻る
+                  </button>
+                )}
+                {/* 更新ボタンを上部に配置 */}
+                <button
+                  type="submit"
+                  form="store-edit-form"
+                  disabled={isSaving}
+                  className={`px-6 py-2 text-white rounded-md ${
+                    isSaving
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-indigo-600 hover:bg-indigo-700'
+                  }`}
+                >
+                  {isSaving ? '更新中...' : '更新'}
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* タブメニュー */}
@@ -709,7 +809,7 @@ export default function OwnerEditPage() {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-6">
+          <form id="store-edit-form" onSubmit={handleSubmit} className="p-6">
             {/* 基本情報タブ */}
             {activeTab === 'basic' && (
               <div className="space-y-8">
@@ -2003,14 +2103,14 @@ export default function OwnerEditPage() {
               </div>
             )}
 
-            {/* 送信ボタン */}
+            {/* 更新ボタン（下部にも配置） */}
             <div className="flex justify-end mt-8 pt-6 border-t">
               <button
                 type="submit"
                 disabled={isSaving}
                 className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50"
               >
-                {isSaving ? '保存中...' : '保存する'}
+                {isSaving ? '更新中...' : '更新'}
               </button>
             </div>
           </form>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -46,8 +46,10 @@ export default function StoresPage() {
   const [stores, setStores] = useState<Store[]>([]);
   const [areas, setAreas] = useState<Area[]>([]);
   const [genres, setGenres] = useState<Genre[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(true); // 初回ロードのみ
+  const [isUpdating, setIsUpdating] = useState(false); // データ更新中の表示
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchInput, setSearchInput] = useState(''); // 入力用の状態を別に管理
   const [selectedArea, setSelectedArea] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('');
   const [showInactive, setShowInactive] = useState(false);
@@ -62,51 +64,112 @@ export default function StoresPage() {
     limit: 20,
     totalPages: 0
   });
+  const [searchTimer, setSearchTimer] = useState<NodeJS.Timeout | null>(null);
+
+  // 検索入力のデバウンス処理
+  useEffect(() => {
+    if (searchTimer) {
+      clearTimeout(searchTimer);
+    }
+
+    // 入力が止まってから500ms後に検索を実行
+    const timer = setTimeout(() => {
+      setSearchTerm(searchInput);
+    }, 500);
+
+    setSearchTimer(timer);
+
+    return () => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+    };
+  }, [searchInput]);
 
   useEffect(() => {
-    fetchData(currentPage);
-  }, [currentPage]);
+    fetchData();
+  }, [currentPage, searchTerm, selectedArea, selectedGenre, showInactive]);
 
-  const fetchData = async (page: number = 1) => {
+  useEffect(() => {
+    // 検索条件が変更されたらページをリセット
+    if (searchTerm || selectedArea || selectedGenre) {
+      setCurrentPage(1);
+    }
+  }, [searchTerm, selectedArea, selectedGenre]);
+
+  const fetchData = async () => {
     try {
-      setIsLoading(true);
+      // 初回ロードのみ全画面ローディング、それ以外はデータ更新のみ
+      if (!isInitialLoading) {
+        setIsUpdating(true);
+      }
 
-      // 店舗データとマスタデータを並行して取得
-      const [storesRes, areasRes, genresRes] = await Promise.all([
-        fetch(`/api/stores?page=${page}&limit=20`),
-        fetch('/api/masters/areas'),
-        fetch('/api/masters/genres')
-      ]);
+      // クエリパラメータを構築
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: '20',
+        search: searchTerm,
+        area: selectedArea,
+        genre: selectedGenre,
+        showInactive: showInactive.toString()
+      });
 
-      const storesData = await storesRes.json();
-      const areasData = await areasRes.json();
-      const genresData = await genresRes.json();
+      // 初回のみマスタデータも取得
+      if (isInitialLoading) {
+        const [storesRes, areasRes, genresRes] = await Promise.all([
+          fetch(`/api/stores?${params}`),
+          fetch('/api/masters/areas'),
+          fetch('/api/masters/genres')
+        ]);
 
-      if (storesData.error) {
-        console.error('Error fetching stores:', storesData.error);
+        const storesData = await storesRes.json();
+        const areasData = await areasRes.json();
+        const genresData = await genresRes.json();
+
+        if (!areasData.error) {
+          setAreas(areasData.data || areasData || []);
+        }
+
+        if (!genresData.error) {
+          // is_visibleがtrueのもののみ表示
+          const visibleGenres = (genresData.data || genresData || []).filter((g: Genre) => g.is_visible);
+          setGenres(visibleGenres);
+        }
+
+        if (storesData.error) {
+          console.error('Error fetching stores:', storesData.error);
+        } else {
+          setStores(storesData.data || []);
+          setPagination(storesData.pagination || {
+            total: 0,
+            page: 1,
+            limit: 20,
+            totalPages: 0
+          });
+        }
+
+        setIsInitialLoading(false);
       } else {
-        setStores(storesData.data || []);
-        setPagination(storesData.pagination || {
-          total: 0,
-          page: 1,
-          limit: 20,
-          totalPages: 0
-        });
-      }
+        // 2回目以降は店舗データのみ取得
+        const storesRes = await fetch(`/api/stores?${params}`);
+        const storesData = await storesRes.json();
 
-      if (!areasData.error) {
-        setAreas(areasData.data || areasData || []);
-      }
-
-      if (!genresData.error) {
-        // is_visibleがtrueのもののみ表示
-        const visibleGenres = (genresData.data || genresData || []).filter((g: Genre) => g.is_visible);
-        setGenres(visibleGenres);
+        if (storesData.error) {
+          console.error('Error fetching stores:', storesData.error);
+        } else {
+          setStores(storesData.data || []);
+          setPagination(storesData.pagination || {
+            total: 0,
+            page: 1,
+            limit: 20,
+            totalPages: 0
+          });
+        }
       }
     } catch (error) {
       console.error('Error:', error);
     } finally {
-      setIsLoading(false);
+      setIsUpdating(false);
     }
   };
 
@@ -119,7 +182,7 @@ export default function StoresPage() {
       });
 
       if (response.ok) {
-        fetchData(currentPage); // 再読み込み
+        fetchData(); // 再読み込み
       }
     } catch (error) {
       console.error('Error updating store status:', error);
@@ -156,7 +219,7 @@ export default function StoresPage() {
       });
 
       if (response.ok) {
-        fetchData(currentPage); // 再読み込み
+        fetchData(); // 再読み込み
         setShowRecommendModal(false);
         setSelectedStore(null);
       }
@@ -165,22 +228,16 @@ export default function StoresPage() {
     }
   };
 
-  const filteredStores = stores.filter(store => {
-    const matchesSearch = store.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          store.name_kana?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
-    const matchesArea = !selectedArea || store.area === selectedArea;
-    const matchesGenre = !selectedGenre || store.genre === selectedGenre;
-    const matchesActive = showInactive || store.is_active;
-
-    return matchesSearch && matchesArea && matchesGenre && matchesActive;
-  });
+  // APIでフィルタリング済みなので、storesをそのまま使用
+  const filteredStores = stores;
 
   // 業態（area）のオプションを作成
   const areaOptions = areas.sort((a, b) => a.display_order - b.display_order);
   // 状態（genre）のオプションを作成
   const genreOptions = genres.sort((a, b) => a.display_order - b.display_order);
 
-  if (isLoading) {
+  // 初回ロード時のみ全画面ローディングを表示
+  if (isInitialLoading) {
     return (
       <div className="min-h-screen bg-gray-50 p-8">
         <div className="text-center">
@@ -221,9 +278,9 @@ export default function StoresPage() {
               </label>
               <input
                 type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="店舗名または店舗名（カナ）"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="店舗名を入力"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900"
               />
             </div>
@@ -281,26 +338,36 @@ export default function StoresPage() {
         </div>
 
         {/* 店舗一覧テーブル */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
+        <div className="bg-white rounded-lg shadow overflow-hidden relative">
+          {/* 更新中のオーバーレイ（リスト部分のみ） */}
+          {isUpdating && (
+            <div className="absolute inset-0 bg-white bg-opacity-75 z-10 flex items-center justify-center">
+              <div className="flex items-center space-x-2">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
+                <span className="text-sm text-gray-600">更新中...</span>
+              </div>
+            </div>
+          )}
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-48">
                   店舗情報
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-32">
                   業態 / 駅
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-48">
                   連絡先
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-20">
                   対象店舗
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-32">
                   優先表示
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-28">
                   操作
                 </th>
               </tr>
@@ -308,7 +375,7 @@ export default function StoresPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredStores.map((store) => (
                 <tr key={store.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-6 py-4 whitespace-nowrap min-w-48">
                     <div>
                       <div className="text-sm font-medium text-gray-900">
                         {store.name}
@@ -318,17 +385,17 @@ export default function StoresPage() {
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-6 py-4 whitespace-nowrap min-w-32">
                     <div className="text-sm text-gray-900">{store.genre || '-'}</div>
                     <div className="text-sm text-gray-500">{store.area || '-'}</div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-6 py-4 whitespace-nowrap min-w-48">
                     <div className="text-sm text-gray-900">{store.phone || '-'}</div>
                     <div className="text-sm text-gray-500">
                       {store.address ? store.address.substring(0, 20) + '...' : '-'}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-6 py-4 whitespace-nowrap min-w-20">
                     <button
                       onClick={() => handleStatusToggle(store.id, store.is_active)}
                       className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -340,8 +407,8 @@ export default function StoresPage() {
                       {store.is_active ? '有効' : '無効'}
                     </button>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center space-x-2">
+                  <td className="px-6 py-4 whitespace-nowrap min-w-32">
+                    <div className="flex flex-col space-y-1">
                       <button
                         onClick={() => handleRecommendToggle(store.id, store.is_recommended)}
                         className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -359,24 +426,27 @@ export default function StoresPage() {
                       )}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <Link
-                      href={`/admin/stores/${store.id}`}
-                      className="text-indigo-600 hover:text-indigo-900 mr-4"
-                    >
-                      詳細
-                    </Link>
-                    <Link
-                      href={`/admin/stores/${store.id}/edit`}
-                      className="text-indigo-600 hover:text-indigo-900"
-                    >
-                      編集
-                    </Link>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium min-w-28">
+                    <div className="flex flex-col space-y-2">
+                      <Link
+                        href={`/admin/stores/${store.id}`}
+                        className="text-indigo-600 hover:text-indigo-900"
+                      >
+                        詳細
+                      </Link>
+                      <Link
+                        href={`/admin/stores/${store.id}/edit`}
+                        className="text-indigo-600 hover:text-indigo-900"
+                      >
+                        編集
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
-          </table>
+            </table>
+          </div>
 
           {filteredStores.length === 0 && (
             <div className="text-center py-8 text-gray-500">

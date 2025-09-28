@@ -20,12 +20,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // お気に入り登録ユーザーを store_favorite_users ビューから取得
+    // お気に入り登録ユーザーを favorite_stores テーブルから取得
     const { data: favoriteUsers, error: fetchError } = await supabaseAdmin
-      .from('store_favorite_users')
-      .select('*')
+      .from('favorite_stores')
+      .select('user_id, store_id, created_at')
       .eq('store_id', storeId)
-      .order('favorited_at', { ascending: false });
+      .order('created_at', { ascending: false });
 
     if (fetchError) {
       console.error('Error fetching favorite users:', fetchError);

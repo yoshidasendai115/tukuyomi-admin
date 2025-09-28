@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
             const parsed = JSON.parse(area.railway_lines);
             lines = Array.isArray(parsed) ? parsed : [area.railway_lines];
           } catch {
-            lines = area.railway_lines.split(',').map(line => line.trim()).filter(line => line);
+            lines = area.railway_lines.split(',').map((line: string) => line.trim()).filter((line: string) => line);
           }
         }
 
@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
             (typeof area.railway_lines === 'string' ?
               (area.railway_lines.startsWith('[') ?
                 JSON.parse(area.railway_lines) :
-                area.railway_lines.split(',').map(line => line.trim()).filter(line => line)
+                area.railway_lines.split(',').map((line: string) => line.trim()).filter((line: string) => line)
               ) :
               []
             )

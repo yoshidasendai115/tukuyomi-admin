@@ -57,7 +57,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const credentials = tokenData.admin_store_edit_credentials;
+    const credentialsData = tokenData.admin_store_edit_credentials;
+    const credentials = Array.isArray(credentialsData)
+      ? credentialsData[0]
+      : credentialsData;
 
     // 認証が不要な場合
     if (!credentials || !credentials.require_auth || !credentials.is_active) {

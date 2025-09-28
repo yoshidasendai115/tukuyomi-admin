@@ -76,9 +76,6 @@ interface Store {
   trial_conditions?: string;
   interview_location?: string;
   interview_flow?: string;
-  sns_instagram?: string;
-  sns_twitter?: string;
-  sns_tiktok?: string;
   last_updated_by?: string;
   favorite_count?: number;
   application_count?: number;

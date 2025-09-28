@@ -5,7 +5,7 @@ import { getSession } from '@/lib/auth';
 // 特定の申請に対して店舗マッチングを実行
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // セッション確認
@@ -21,7 +21,8 @@ export async function POST(
       );
     }
 
-    const requestId = params.id;
+    const { id } = await params;
+    const requestId = id;
 
     // 申請情報を取得
     const { data: requestData, error: requestError } = await supabaseAdmin
@@ -107,7 +108,7 @@ export async function POST(
 // 申請と店舗のマッチング状態を確認
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // セッション確認
@@ -123,7 +124,8 @@ export async function GET(
       );
     }
 
-    const requestId = params.id;
+    const { id } = await params;
+    const requestId = id;
 
     // 申請と関連する店舗情報を取得
     const { data, error } = await supabaseAdmin

@@ -65,7 +65,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const credentials = tokenData.admin_store_edit_credentials;
+    const credentials = Array.isArray(tokenData.admin_store_edit_credentials)
+      ? tokenData.admin_store_edit_credentials[0]
+      : tokenData.admin_store_edit_credentials;
 
     // 認証情報が設定されていない場合
     if (!credentials) {

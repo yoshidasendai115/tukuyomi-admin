@@ -4,7 +4,7 @@ import { getSession } from '@/lib/auth';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { type: string } }
+  { params }: { params: Promise<{ type: string }> }
 ) {
   try {
     // セッション確認
@@ -30,7 +30,8 @@ export async function POST(
       );
     }
 
-    const tableName = params.type;
+    const { type } = await params;
+    const tableName = type;
 
     // 有効なテーブル名かチェック
     if (!['areas', 'genres'].includes(tableName)) {
@@ -42,7 +43,7 @@ export async function POST(
 
     // 各アイテムの表示順を更新
     const updates = items.map((item: { id: string; display_order: number }) =>
-      supabaseAdmin
+      supabaseAdmin!
         .from(tableName)
         .update({ display_order: item.display_order })
         .eq('id', item.id)

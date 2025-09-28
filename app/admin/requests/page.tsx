@@ -60,7 +60,6 @@ interface StoreEditRequest {
   related_store?: Store;
   token?: string;
   generated_url?: string;
-  token?: string;
 }
 
 export default function AdminRequestsPage() {

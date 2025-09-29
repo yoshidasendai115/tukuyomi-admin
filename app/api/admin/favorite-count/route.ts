@@ -14,6 +14,10 @@ export async function GET(request: NextRequest) {
     }
 
     if (!supabaseAdmin) {
+      console.error('Supabase Admin client not initialized:', {
+        supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+        hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY
+      });
       return NextResponse.json(
         { message: 'サーバー設定エラー' },
         { status: 500 }
@@ -28,9 +32,13 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false });
 
     if (fetchError) {
-      console.error('Error fetching favorite users:', fetchError);
+      console.error('Error fetching favorite users:', {
+        error: fetchError,
+        storeId,
+        query: 'favorite_stores'
+      });
       return NextResponse.json(
-        { error: 'Failed to fetch favorite users' },
+        { error: 'Failed to fetch favorite users', details: fetchError.message },
         { status: 500 }
       );
     }

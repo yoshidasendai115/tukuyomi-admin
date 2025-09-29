@@ -12,9 +12,6 @@ const nextConfig: NextConfig = {
     // ESLintエラーも無視します。
     ignoreDuringBuilds: true,
   },
-  experimental: {
-    missingSuspenseWithCSRBailout: false,
-  },
 };
 
 export default nextConfig;

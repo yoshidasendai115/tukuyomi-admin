@@ -14,10 +14,11 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 // サーバー用（管理者権限が必要な操作）
 // サーバーサイドでのみ使用するため、条件付きで作成
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// 新しいシークレットキー（Legacy API keysの代替）を優先
+const supabaseSecretKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-export const supabaseAdmin = supabaseServiceKey
-  ? createClient(supabaseUrl, supabaseServiceKey, {
+export const supabaseAdmin = supabaseSecretKey
+  ? createClient(supabaseUrl, supabaseSecretKey, {
       auth: {
         autoRefreshToken: false,
         persistSession: false

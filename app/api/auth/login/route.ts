@@ -25,6 +25,8 @@ export async function POST(request: NextRequest) {
     // Service Roleクライアントが利用可能か確認
     if (!supabaseAdmin) {
       console.error('Service Role Key not configured');
+      console.error('SUPABASE_SECRET_KEY:', process.env.SUPABASE_SECRET_KEY ? 'SET' : 'NOT SET');
+      console.error('SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SET' : 'NOT SET');
       return NextResponse.json(
         { message: 'サーバー設定エラー：管理者に連絡してください' },
         { status: 500 }

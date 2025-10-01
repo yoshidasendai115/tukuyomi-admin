@@ -97,8 +97,14 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Login error:', error);
+    const errorMessage = error instanceof Error ? error.message : '予期しないエラーが発生しました';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    console.error('Error details:', { message: errorMessage, stack: errorStack });
     return NextResponse.json(
-      { message: '予期しないエラーが発生しました' },
+      {
+        message: '予期しないエラーが発生しました',
+        ...(process.env.NODE_ENV === 'development' && { error: errorMessage })
+      },
       { status: 500 }
     );
   }

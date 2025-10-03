@@ -63,7 +63,7 @@ function StoresPageContent() {
   const [showAreaSuggestions, setShowAreaSuggestions] = useState(false);
   const [filteredAreas, setFilteredAreas] = useState<Area[]>([]);
   const [isAreaInputFocused, setIsAreaInputFocused] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get('page') || '1'));
   const areaInputRef = useRef<HTMLDivElement>(null);
   const [showRecommendModal, setShowRecommendModal] = useState(false);
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
@@ -175,7 +175,7 @@ function StoresPageContent() {
       if (isInitialLoading) {
         const [storesRes, areasRes, genresRes] = await Promise.all([
           fetch(`/api/stores?${params}`),
-          fetch('/api/masters/areas'),
+          fetch('/api/masters/stations'),
           fetch('/api/masters/genres')
         ]);
 
@@ -189,7 +189,8 @@ function StoresPageContent() {
 
         if (!genresData.error) {
           // is_visibleがtrueのもののみ表示
-          const visibleGenres = (genresData.data || genresData || []).filter((g: Genre) => g.is_visible);
+          const genresArray = Array.isArray(genresData) ? genresData : (genresData.data || []);
+          const visibleGenres = genresArray.filter((g: Genre) => g.is_visible);
           setGenres(visibleGenres);
         }
 
@@ -316,9 +317,9 @@ function StoresPageContent() {
   const filteredStores = stores;
 
   // 業態（area）のオプションを作成
-  const areaOptions = areas.sort((a, b) => a.display_order - b.display_order);
+  const areaOptions = Array.isArray(areas) ? [...areas].sort((a, b) => a.display_order - b.display_order) : [];
   // 状態（genre）のオプションを作成
-  const genreOptions = genres.sort((a, b) => a.display_order - b.display_order);
+  const genreOptions = Array.isArray(genres) ? [...genres].sort((a, b) => a.display_order - b.display_order) : [];
 
   // 初回ロード時のみ全画面ローディングを表示
   if (isInitialLoading) {

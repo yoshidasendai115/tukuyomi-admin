@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
         *,
         station_group_members (
           id,
-          area_id
+          station_id
         )
       `)
       .order('name', { ascending: true });
@@ -68,6 +68,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 重複チェック: グループIDの重複
+    const { data: existingByName } = await supabaseAdmin
+      .from('station_groups')
+      .select('id, name')
+      .eq('name', name)
+      .single();
+
+    if (existingByName) {
+      return NextResponse.json(
+        { error: `グループID「${name}」は既に使用されています` },
+        { status: 400 }
+      );
+    }
+
+    // 重複チェック: 表示名の重複
+    const { data: existingByDisplayName } = await supabaseAdmin
+      .from('station_groups')
+      .select('id, name, display_name')
+      .eq('display_name', display_name);
+
+    if (existingByDisplayName && existingByDisplayName.length > 0) {
+      return NextResponse.json(
+        {
+          error: `表示名「${display_name}」は既に使用されています`,
+          existing: existingByDisplayName.map(g => g.name)
+        },
+        { status: 400 }
+      );
+    }
+
     // グループを作成
     const { data: groupData, error: groupError } = await supabaseAdmin
       .from('station_groups')
@@ -87,9 +117,9 @@ export async function POST(request: NextRequest) {
 
     // メンバーを追加
     if (member_area_ids && member_area_ids.length > 0) {
-      const members = member_area_ids.map((area_id: string) => ({
+      const members = member_area_ids.map((station_id: string) => ({
         group_id: groupData.id,
-        area_id
+        station_id
       }));
 
       const { error: memberError } = await supabaseAdmin
@@ -108,7 +138,7 @@ export async function POST(request: NextRequest) {
         *,
         station_group_members (
           id,
-          area_id
+          station_id
         )
       `)
       .eq('id', groupData.id)
@@ -154,6 +184,38 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // 重複チェック: グループID（自分自身を除く）
+    const { data: existingByName } = await supabaseAdmin
+      .from('station_groups')
+      .select('id, name')
+      .eq('name', name)
+      .neq('id', id)
+      .single();
+
+    if (existingByName) {
+      return NextResponse.json(
+        { error: `グループID「${name}」は既に他のグループで使用されています` },
+        { status: 400 }
+      );
+    }
+
+    // 重複チェック: 表示名（自分自身を除く）
+    const { data: existingByDisplayName } = await supabaseAdmin
+      .from('station_groups')
+      .select('id, name, display_name')
+      .eq('display_name', display_name)
+      .neq('id', id);
+
+    if (existingByDisplayName && existingByDisplayName.length > 0) {
+      return NextResponse.json(
+        {
+          error: `表示名「${display_name}」は既に他のグループで使用されています`,
+          existing: existingByDisplayName.map(g => g.name)
+        },
+        { status: 400 }
+      );
+    }
+
     // グループを更新
     const { error: updateError } = await supabaseAdmin
       .from('station_groups')
@@ -182,9 +244,9 @@ export async function PUT(request: NextRequest) {
 
     // 新しいメンバーを追加
     if (member_area_ids && member_area_ids.length > 0) {
-      const members = member_area_ids.map((area_id: string) => ({
+      const members = member_area_ids.map((station_id: string) => ({
         group_id: id,
-        area_id
+        station_id
       }));
 
       const { error: memberError } = await supabaseAdmin
@@ -202,11 +264,10 @@ export async function PUT(request: NextRequest) {
         *,
         station_group_members (
           id,
-          area_id
+          station_id
         )
       `)
       .eq('id', id)
-      .select()
       .single();
 
     if (error) {

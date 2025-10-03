@@ -85,10 +85,10 @@ export async function PATCH(
     const allowedFields = [
       'name',
       'name_kana',
-      'genre',
-      'area',
+      'genre_id',
+      'area_id',
       'address',
-      'phone',
+      'phone_number',
       'email',
       'description',
       'business_hours',

@@ -88,7 +88,7 @@ function StoreDetailPageContent() {
           <h1 className="text-2xl font-bold text-gray-900">店舗詳細</h1>
           <div className="space-x-2">
             <Link
-              href={`/owner/edit/${store.id}`}
+              href={`/admin/stores/${store.id}/edit`}
               className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
             >
               編集

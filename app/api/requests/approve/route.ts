@@ -1,6 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getSession } from '@/lib/auth';
+import bcrypt from 'bcryptjs';
+
+// 8桁のランダムパスワードを生成
+function generatePassword(length: number = 8): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  let password = '';
+  for (let i = 0; i < length; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return password;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,53 +37,75 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // トークン生成
-    const token = crypto.randomUUID();
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 30); // 30日後に期限切れ
+    // 申請データを取得
+    const { data: requestData, error: fetchError } = await supabaseAdmin
+      .from('admin_store_edit_requests')
+      .select('*')
+      .eq('id', requestId)
+      .single();
 
-    // URLを生成
-    const url = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3002'}/owner/edit/${token}`;
+    if (fetchError || !requestData) {
+      return NextResponse.json(
+        { error: '申請が見つかりません' },
+        { status: 404 }
+      );
+    }
 
-    // 申請を承認済みに更新
+    // 8桁のランダムパスワードを生成
+    const plainPassword = generatePassword(8);
+    const hashedPassword = await bcrypt.hash(plainPassword, 10);
+
+    // アカウントを作成（メールアドレスをログインIDとして使用）
+    const { data: newUser, error: userError } = await supabaseAdmin
+      .from('admin_auth_users')
+      .insert({
+        login_id: requestData.applicant_email,
+        password_hash: hashedPassword,
+        display_name: requestData.applicant_name,
+        role: 'store_owner',
+        assigned_store_id: requestData.store_id,
+        is_active: true
+      })
+      .select()
+      .single();
+
+    if (userError) {
+      console.error('Error creating user:', userError);
+      return NextResponse.json(
+        { error: 'アカウント作成に失敗しました: ' + userError.message },
+        { status: 500 }
+      );
+    }
+
+    // 申請を承認済みに更新（生成したパスワードも保存）
     const { error: updateError } = await supabaseAdmin
       .from('admin_store_edit_requests')
       .update({
         status: 'approved',
         admin_notes: adminNotes,
+        processed_by: session.userId,
+        processed_at: new Date().toISOString(),
         reviewed_at: new Date().toISOString(),
-        processed_by: session.userId
+        generated_password: plainPassword
       })
       .eq('id', requestId);
 
     if (updateError) {
       console.error('Error updating request:', updateError);
+      // ユーザー作成はロールバックしない（手動で削除可能）
       return NextResponse.json(
-        { error: updateError.message },
+        { error: '申請更新に失敗しました' },
         { status: 500 }
       );
     }
 
-    // トークンを保存
-    const { error: tokenError } = await supabaseAdmin
-      .from('admin_store_edit_tokens')
-      .insert({
-        request_id: requestId,
-        token: token,
-        expires_at: expiresAt.toISOString(),
-        is_active: true
-      });
-
-    if (tokenError) {
-      console.error('Error saving token:', tokenError);
-      // トークン保存に失敗しても、申請は承認済みとして処理を続ける
-    }
-
     return NextResponse.json({
-      data: {
-        token,
-        url,
-        expiresAt: expiresAt.toISOString()
+      success: true,
+      message: '申請を承認しました',
+      credentials: {
+        loginId: requestData.applicant_email,
+        password: plainPassword,
+        displayName: requestData.applicant_name
       }
     });
   } catch (error) {

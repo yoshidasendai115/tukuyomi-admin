@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Image from 'next/image';
+import { supabase } from '@/lib/supabase';
 
 
 interface Store {
@@ -190,6 +191,19 @@ function AdminStoreEditPageContent({ params }: PageProps) {
   const [mainImagePreview, setMainImagePreview] = useState<string | null>(null);
   const [additionalImagePreviews, setAdditionalImagePreviews] = useState<(string | null)[]>([null, null, null]);
 
+  // 優先度スコアの重複チェック
+  const [priorityScoreConflict, setPriorityScoreConflict] = useState<{
+    exists: boolean;
+    storeName?: string;
+  }>({ exists: false });
+
+  // 距離計算
+  const [isCalculatingDistance, setIsCalculatingDistance] = useState(false);
+
+  // ユーザーロール管理
+  const [userRole, setUserRole] = useState<string>('');
+  const isStoreOwner = userRole === 'store_owner';
+
   useEffect(() => {
     // Paramsを展開
     params.then((p) => {
@@ -206,12 +220,12 @@ function AdminStoreEditPageContent({ params }: PageProps) {
 
   const checkAuthAndFetchStore = async () => {
     try {
-      // 管理者セッション確認
+      // セッション確認とロール取得
       const sessionRes = await fetch('/api/auth/session');
 
       if (!sessionRes.ok) {
         console.error('Admin authentication required');
-        router.push('/login');
+        router.push('/admin/login');
         return;
       }
 
@@ -219,15 +233,18 @@ function AdminStoreEditPageContent({ params }: PageProps) {
 
       if (!sessionData || !sessionData.userId) {
         console.error('No valid admin session');
-        router.push('/login');
+        router.push('/admin/login');
         return;
       }
+
+      // ロールを設定
+      setUserRole(sessionData.role || '');
 
       setIsAuthenticated(true);
       setIsValidToken(true);
 
       // 店舗情報の取得
-      await fetchStoreData();
+      await fetchStoreData(storeId);
     } catch (error) {
       console.error('Error checking auth:', error);
       setIsValidToken(false);
@@ -235,10 +252,11 @@ function AdminStoreEditPageContent({ params }: PageProps) {
     }
   };
 
-  const fetchStoreData = async () => {
+  const fetchStoreData = async (targetStoreId: string) => {
     try {
+      console.log('[fetchStoreData] Fetching store:', targetStoreId);
       // 店舗情報を取得
-      const response = await fetch(`/api/stores/${storeId}`, {
+      const response = await fetch(`/api/stores/${targetStoreId}`, {
         credentials: 'same-origin',
         headers: {
           'Content-Type': 'application/json',
@@ -254,7 +272,7 @@ function AdminStoreEditPageContent({ params }: PageProps) {
 
 
       // マスターデータ取得
-      const masterResponse = await fetch('/api/owner/master-data');
+      const masterResponse = await fetch('/api/masters/data');
       const masterDataResult = await masterResponse.json();
 
       if (masterResponse.ok) {
@@ -340,6 +358,16 @@ function AdminStoreEditPageContent({ params }: PageProps) {
       }));
     }
 
+    // 優先度スコアの重複チェック
+    if (name === 'priority_score') {
+      const score = value ? Number(value) : 0;
+      if (score > 0 && score <= 100) {
+        checkPriorityScoreConflict(score);
+      } else {
+        setPriorityScoreConflict({ exists: false });
+      }
+    }
+
     // 駅名入力時のサジェスト表示
     if (name === 'station') {
       if (value.length > 0) {
@@ -364,6 +392,57 @@ function AdminStoreEditPageContent({ params }: PageProps) {
       } else {
         setShowRailwaySuggestions(false);
       }
+    }
+  };
+
+  const checkPriorityScoreConflict = async (score: number) => {
+    try {
+      const response = await fetch(`/api/stores/check-priority-score?score=${score}&excludeStoreId=${store?.id || ''}`);
+      if (response.ok) {
+        const data = await response.json();
+        setPriorityScoreConflict({
+          exists: data.exists,
+          storeName: data.storeName
+        });
+      }
+    } catch (error) {
+      console.error('Error checking priority score:', error);
+    }
+  };
+
+  const calculateDistance = async () => {
+    const station = formData.station;
+    const address = formData.address;
+
+    if (!station || !address) {
+      alert('駅名と住所の両方が入力されている必要があります');
+      return;
+    }
+
+    setIsCalculatingDistance(true);
+    try {
+      const response = await fetch(
+        `/api/maps/distance?station=${encodeURIComponent(station)}&address=${encodeURIComponent(address)}`
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || '距離の計算に失敗しました');
+      }
+
+      const data = await response.json();
+
+      setFormData(prev => ({
+        ...prev,
+        station_distance: data.formattedDistance
+      }));
+
+      alert(`距離を自動計算しました: ${data.formattedDistance}`);
+    } catch (error) {
+      console.error('Error calculating distance:', error);
+      alert(error instanceof Error ? error.message : '距離の計算中にエラーが発生しました');
+    } finally {
+      setIsCalculatingDistance(false);
     }
   };
 
@@ -536,6 +615,15 @@ function AdminStoreEditPageContent({ params }: PageProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // 優先度スコアの重複チェック
+    if (formData.priority_score && formData.priority_score > 0) {
+      if (priorityScoreConflict.exists) {
+        alert(`優先度スコア ${formData.priority_score} は既に「${priorityScoreConflict.storeName}」で使用されています。別の値を設定してください。`);
+        return;
+      }
+    }
+
     setIsSaving(true);
 
     try {
@@ -654,7 +742,8 @@ function AdminStoreEditPageContent({ params }: PageProps) {
     // { id: 'welfare', label: '福利厚生' }, // 非表示
     // { id: 'sns', label: 'SNS・Web' }, // 基本情報に統合
     { id: 'message', label: 'お知らせ配信' },
-    { id: 'priority', label: '優先表示設定' }
+    // store_ownerロール以外は優先表示設定タブを表示
+    ...(!isStoreOwner ? [{ id: 'priority', label: '優先表示設定' }] : [])
   ];
 
   const dayNames = {
@@ -667,8 +756,7 @@ function AdminStoreEditPageContent({ params }: PageProps) {
     sunday: '日曜日'
   };
 
-  // 管理者権限モード
-  const isAdminMode = true;
+  // 管理者権限モード（アクセスモードから判定済み）
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -683,8 +771,8 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                 </p>
               </div>
               <div className="flex gap-2">
-                {/* 管理者モードの場合は一覧に戻るボタンを表示 */}
-                {isAdminMode && (
+                {/* store_ownerロール以外は一覧に戻るボタンを表示 */}
+                {!isStoreOwner && (
                   <button
                     type="button"
                     onClick={() => {
@@ -903,14 +991,27 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         駅からの距離
                       </label>
-                      <input
-                        type="text"
-                        name="station_distance"
-                        value={formData.station_distance || ''}
-                        onChange={handleInputChange}
-                        placeholder="例: 徒歩5分"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      />
+                      <div className="flex space-x-2">
+                        <input
+                          type="text"
+                          name="station_distance"
+                          value={formData.station_distance || ''}
+                          onChange={handleInputChange}
+                          placeholder="例: 徒歩5分"
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={calculateDistance}
+                          disabled={isCalculatingDistance || !formData.station || !formData.address}
+                          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                        >
+                          {isCalculatingDistance ? '計算中...' : '自動計算'}
+                        </button>
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500">
+                        ※ 駅名と住所が入力されている場合、自動計算ボタンで徒歩時間を取得できます
+                      </p>
                     </div>
 
                   </div>
@@ -1219,14 +1320,27 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       駅からの距離
                     </label>
-                    <input
-                      type="text"
-                      name="station_distance"
-                      value={formData.station_distance || ''}
-                      onChange={handleInputChange}
-                      placeholder="例: 徒歩5分"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    />
+                    <div className="flex space-x-2">
+                      <input
+                        type="text"
+                        name="station_distance"
+                        value={formData.station_distance || ''}
+                        onChange={handleInputChange}
+                        placeholder="例: 徒歩5分"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={calculateDistance}
+                        disabled={isCalculatingDistance || !formData.station || !formData.address}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                      >
+                        {isCalculatingDistance ? '計算中...' : '自動計算'}
+                      </button>
+                    </div>
+                    <p className="mt-1 text-xs text-gray-500">
+                      ※ 駅名と住所が入力されている場合、自動計算ボタンで徒歩時間を取得できます
+                    </p>
                   </div>
 
                   <div>
@@ -2030,7 +2144,7 @@ function AdminStoreEditPageContent({ params }: PageProps) {
             )}
 
             {/* 優先表示設定タブ - システム管理者専用 */}
-            {activeTab === 'priority' && isAdminMode && (
+            {activeTab === 'priority' && !isStoreOwner && (
               <div className="space-y-6">
                 <div className="bg-yellow-50 p-4 rounded-lg">
                   <div className="flex">
@@ -2092,11 +2206,25 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                         onChange={handleInputChange}
                         min="0"
                         max="100"
-                        className="w-20 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className={`w-20 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+                          priorityScoreConflict.exists
+                            ? 'border-red-300 focus:ring-red-500'
+                            : 'border-gray-300 focus:ring-indigo-500'
+                        }`}
                       />
                     </div>
+                    {priorityScoreConflict.exists && (
+                      <p className="mt-2 text-sm text-red-600 flex items-center">
+                        <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                        </svg>
+                        この優先度スコアは既に「{priorityScoreConflict.storeName}」で使用されています
+                      </p>
+                    )}
                     <p className="mt-1 text-sm text-gray-500">
                       数値が高いほど優先的に表示されます（通常: 0〜30、重要: 31〜70、最重要: 71〜100）
+                      <br />
+                      ※ 0以外の値は他の店舗と重複できません（最大99件まで）
                     </p>
                   </div>
 

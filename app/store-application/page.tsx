@@ -1,12 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+
+interface Genre {
+  id: string;
+  name: string;
+  is_visible: boolean;
+  display_order: number;
+}
 
 interface FormData {
   store_name: string;
   store_address: string;
   store_phone: string;
-  business_type: 'restaurant' | 'girls_bar' | 'snack' | 'concept_cafe' | 'other';
+  genre_id: string;
   applicant_name: string;
   applicant_email: string;
   applicant_phone: string;
@@ -26,7 +33,7 @@ export default function StoreApplicationPage() {
     store_name: '',
     store_address: '',
     store_phone: '',
-    business_type: 'restaurant',
+    genre_id: '',
     applicant_name: '',
     applicant_email: '',
     applicant_phone: '',
@@ -43,6 +50,26 @@ export default function StoreApplicationPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState<{[key: string]: boolean}>({});
+  const [genres, setGenres] = useState<Genre[]>([]);
+
+  useEffect(() => {
+    fetchGenres();
+  }, []);
+
+  const fetchGenres = async () => {
+    try {
+      const response = await fetch('/api/masters/data');
+      const { genres: genresData, error } = await response.json();
+
+      if (!response.ok) {
+        throw new Error(error || 'Failed to fetch genres');
+      }
+
+      setGenres(genresData || []);
+    } catch (error) {
+      console.error('Error fetching genres:', error);
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -74,6 +101,9 @@ export default function StoreApplicationPage() {
       }
 
       const result = await response.json();
+
+      console.log('Upload result:', result);
+      console.log('Image URL:', result.url);
 
       setFormData(prev => ({
         ...prev,
@@ -220,17 +250,18 @@ export default function StoreApplicationPage() {
                     業態 <span className="text-red-500">*</span>
                   </label>
                   <select
-                    name="business_type"
-                    value={formData.business_type}
+                    name="genre_id"
+                    value={formData.genre_id}
                     onChange={handleInputChange}
                     required
                     className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                   >
                     <option value="">業態を選択してください</option>
-                    <option value="girls_bar">ガールズバー</option>
-                    <option value="snack">スナック</option>
-                    <option value="concept_cafe">コンセプトカフェ</option>
-                    <option value="other">その他</option>
+                    {genres.map(genre => (
+                      <option key={genre.id} value={genre.id}>
+                        {genre.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -382,6 +413,11 @@ export default function StoreApplicationPage() {
                         src={formData.business_license_image}
                         alt="飲食店営業許可証"
                         className="w-32 h-32 object-cover border rounded"
+                        onLoad={() => console.log('Image loaded successfully:', formData.business_license_image)}
+                        onError={(e) => {
+                          console.error('Image load error:', formData.business_license_image);
+                          console.error('Error event:', e);
+                        }}
                       />
                     )}
                     <p className="text-sm text-green-600 mt-1">✓ アップロード完了</p>
@@ -447,6 +483,11 @@ export default function StoreApplicationPage() {
                             src={formData.additional_document_image}
                             alt="追加書類"
                             className="w-32 h-32 object-cover border rounded"
+                            onLoad={() => console.log('Additional document image loaded:', formData.additional_document_image)}
+                            onError={(e) => {
+                              console.error('Additional document image load error:', formData.additional_document_image);
+                              console.error('Error event:', e);
+                            }}
                           />
                         )}
                         <p className="text-sm text-green-600 mt-1">✓ アップロード完了</p>
@@ -500,6 +541,11 @@ export default function StoreApplicationPage() {
                         src={formData.identity_document_image}
                         alt="身分証明書"
                         className="w-32 h-32 object-cover border rounded"
+                        onLoad={() => console.log('Identity document image loaded:', formData.identity_document_image)}
+                        onError={(e) => {
+                          console.error('Identity document image load error:', formData.identity_document_image);
+                          console.error('Error event:', e);
+                        }}
                       />
                     )}
                     <p className="text-sm text-green-600 mt-1">✓ アップロード完了</p>

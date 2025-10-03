@@ -17,17 +17,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 申請一覧を取得（関連する店舗情報とトークン情報も含む）
+    // 申請一覧を取得（関連する店舗情報とジャンル情報を含む）
     const { data: requests, error } = await supabaseAdmin
       .from('admin_store_edit_requests')
       .select(`
         *,
         related_store:store_id(*),
-        admin_store_edit_tokens!admin_store_edit_tokens_request_id_fkey (
-          token,
-          expires_at,
-          is_active
-        )
+        genre:genre_id(id, name, is_visible, display_order)
       `)
       .order('created_at', { ascending: false });
 
@@ -39,19 +35,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // データを整形（トークンがある場合はURLも追加）
-    const formattedRequests = requests?.map((request: any) => {
-      const token = request.admin_store_edit_tokens?.[0];
-      return {
-        ...request,
-        token: token?.token,
-        generated_url: token?.token ?
-          `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3002'}/owner/edit/${token.token}` :
-          null
-      };
-    }) || [];
-
-    return NextResponse.json({ data: formattedRequests });
+    return NextResponse.json({ data: requests || [] });
   } catch (error) {
     console.error('Error:', error);
     return NextResponse.json(
@@ -69,7 +53,7 @@ export async function POST(request: NextRequest) {
       store_name,
       store_address,
       store_phone,
-      business_type,
+      genre_id,
       applicant_name,
       applicant_email,
       applicant_phone,
@@ -115,7 +99,7 @@ export async function POST(request: NextRequest) {
         store_name,
         store_address,
         store_phone,
-        business_type: business_type || 'other',
+        genre_id,
         applicant_name,
         applicant_email,
         applicant_phone,

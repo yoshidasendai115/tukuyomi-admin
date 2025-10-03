@@ -29,6 +29,13 @@ interface Store {
   updated_at: string;
 }
 
+interface Genre {
+  id: string;
+  name: string;
+  is_visible: boolean;
+  display_order: number;
+}
+
 interface StoreEditRequest {
   id: string;
   store_name: string;
@@ -45,6 +52,7 @@ interface StoreEditRequest {
   rejection_reason: string | null;
   created_at: string;
   reviewed_at: string | null;
+  generated_password?: string | null;
   // Document verification fields
   document_type?: 'restaurant_license' | 'late_night_license' | 'corporate_registry' | 'identity_document';
   business_license_image?: string;
@@ -55,11 +63,10 @@ interface StoreEditRequest {
   applicant_relationship?: 'owner' | 'manager' | 'employee' | 'representative';
   document_verification_status?: 'pending' | 'verified' | 'rejected';
   verification_notes?: string;
-  business_type?: 'girls_bar' | 'snack' | 'concept_cafe' | 'other';
+  genre_id?: string;
+  genre?: Genre;
   store_id?: string;
   related_store?: Store;
-  token?: string;
-  generated_url?: string;
 }
 
 export default function AdminRequestsPage() {
@@ -72,20 +79,19 @@ export default function AdminRequestsPage() {
   const [showModal, setShowModal] = useState(false);
   const [adminNotes, setAdminNotes] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
-  const [generatedToken, setGeneratedToken] = useState('');
-  const [generatedUrl, setGeneratedUrl] = useState('');
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState('');
   const [verificationStatus, setVerificationStatus] = useState('');
   const [verificationNotes, setVerificationNotes] = useState('');
   const [isMatching, setIsMatching] = useState(false);
   const [showComparisonModal, setShowComparisonModal] = useState(false);
-  const [showUrlModal, setShowUrlModal] = useState(false);
-  const [selectedUrlRequest, setSelectedUrlRequest] = useState<StoreEditRequest | null>(null);
-  const [copySuccess, setCopySuccess] = useState<string>('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [genres, setGenres] = useState<Genre[]>([]);
 
   useEffect(() => {
     fetchRequests();
+    fetchGenres();
   }, []);
 
   useEffect(() => {
@@ -123,18 +129,27 @@ export default function AdminRequestsPage() {
     }
   };
 
+  const fetchGenres = async () => {
+    try {
+      const response = await fetch('/api/masters/data');
+      const { genres: genresData, error } = await response.json();
+
+      if (!response.ok) {
+        throw new Error(error || 'Failed to fetch genres');
+      }
+
+      setGenres(genresData.filter((g: Genre) => g.is_visible) || []);
+    } catch (error) {
+      console.error('Error fetching genres:', error);
+    }
+  };
+
   const filterRequests = () => {
     if (statusFilter === 'all') {
       setFilteredRequests(requests);
     } else {
       setFilteredRequests(requests.filter(r => r.status === statusFilter));
     }
-  };
-
-  const generateToken = () => {
-    // UUID形式のトークンを生成
-    const token = crypto.randomUUID();
-    return token;
   };
 
   const handleApprove = async (request: StoreEditRequest) => {
@@ -156,12 +171,18 @@ export default function AdminRequestsPage() {
         throw new Error(result.error || 'Failed to approve request');
       }
 
-      const { token, url } = result.data;
-      setGeneratedToken(token);
-      setGeneratedUrl(url);
-
-      // 成功メッセージを表示
-      alert(`承認しました！\n\n編集URL: ${url}\n\nこのURLを申請者にメールで送信してください。`);
+      // 成功メッセージとログイン情報を表示
+      if (result.credentials) {
+        alert(
+          `申請を承認しました！\n\n` +
+          `【ログイン情報】\n` +
+          `ログインID: ${result.credentials.loginId}\n` +
+          `パスワード: ${result.credentials.password}\n\n` +
+          `この情報を申請者にメールで送信してください。`
+        );
+      } else {
+        alert('申請を承認しました');
+      }
 
       setShowModal(false);
       setSelectedRequest(null);
@@ -198,6 +219,56 @@ export default function AdminRequestsPage() {
     } catch (error) {
       console.error('Error canceling approval:', error);
       alert('承認取り消し中にエラーが発生しました');
+    }
+  };
+
+  const handleResetPassword = async (request: StoreEditRequest) => {
+    if (!confirm('パスワードをリセットしますか？\n新しいパスワードが生成されます。')) {
+      return;
+    }
+
+    setIsResettingPassword(true);
+
+    try {
+      const response = await fetch('/api/requests/reset-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          requestId: request.id,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to reset password');
+      }
+
+      alert(
+        `パスワードをリセットしました！\n\n` +
+        `【新しいログイン情報】\n` +
+        `ログインID: ${result.credentials.loginId}\n` +
+        `パスワード: ${result.credentials.password}\n\n` +
+        `この情報を申請者にメールで送信してください。`
+      );
+
+      // モーダルのパスワードを即座に更新
+      if (selectedRequest) {
+        setSelectedRequest({
+          ...selectedRequest,
+          generated_password: result.credentials.password
+        });
+      }
+
+      // リストを更新して新しいパスワードを反映
+      fetchRequests();
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      alert('パスワードリセット中にエラーが発生しました');
+    } finally {
+      setIsResettingPassword(false);
     }
   };
 
@@ -323,14 +394,10 @@ export default function AdminRequestsPage() {
     return labels[type as keyof typeof labels] || type;
   };
 
-  const getBusinessTypeLabel = (type: string) => {
-    const labels = {
-      girls_bar: 'ガールズバー',
-      snack: 'スナック',
-      concept_cafe: 'コンセプトカフェ',
-      other: 'その他'
-    };
-    return labels[type as keyof typeof labels] || type;
+  const getGenreName = (genreId?: string) => {
+    if (!genreId) return '未設定';
+    const genre = genres.find(g => g.id === genreId);
+    return genre?.name || '未設定';
   };
 
   const handleImageClick = (imageUrl: string) => {
@@ -364,24 +431,6 @@ export default function AdminRequestsPage() {
     }
   };
 
-  // URLをクリップボードにコピー
-  const copyToClipboard = async (url: string, requestId: string) => {
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopySuccess(requestId);
-      setTimeout(() => setCopySuccess(''), 2000);
-    } catch (err) {
-      console.error('Failed to copy:', err);
-      alert('コピーに失敗しました');
-    }
-  };
-
-  // URL詳細モーダルを開く
-  const openUrlModal = (request: StoreEditRequest) => {
-    setSelectedUrlRequest(request);
-    setShowUrlModal(true);
-  };
-
 
   if (isLoading) {
     return (
@@ -399,7 +448,7 @@ export default function AdminRequestsPage() {
           <div className="flex justify-between items-center py-4">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">申請管理</h1>
-              <p className="text-sm text-gray-600">店舗編集URL申請の管理</p>
+              <p className="text-sm text-gray-600">店舗編集アカウント申請の管理</p>
             </div>
             <button
               onClick={() => router.push('/admin/dashboard')}
@@ -414,20 +463,61 @@ export default function AdminRequestsPage() {
       {/* フィルタ */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex items-center space-x-4">
-            <label className="text-sm font-medium text-gray-700">ステータス:</label>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              <option value="all">すべて</option>
-              <option value="pending">未処理</option>
-              <option value="reviewing">確認中</option>
-              <option value="approved">承認済</option>
-              <option value="rejected">却下</option>
-            </select>
-            <div className="ml-auto text-sm text-gray-600">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <span className="text-sm font-medium text-gray-700">ステータス:</span>
+              <button
+                onClick={() => setStatusFilter('all')}
+                className={`px-4 py-2 rounded-md text-sm font-medium ${
+                  statusFilter === 'all'
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                すべて
+              </button>
+              <button
+                onClick={() => setStatusFilter('pending')}
+                className={`px-4 py-2 rounded-md text-sm font-medium ${
+                  statusFilter === 'pending'
+                    ? 'bg-yellow-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                未処理
+              </button>
+              <button
+                onClick={() => setStatusFilter('reviewing')}
+                className={`px-4 py-2 rounded-md text-sm font-medium ${
+                  statusFilter === 'reviewing'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                確認中
+              </button>
+              <button
+                onClick={() => setStatusFilter('approved')}
+                className={`px-4 py-2 rounded-md text-sm font-medium ${
+                  statusFilter === 'approved'
+                    ? 'bg-green-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                承認済
+              </button>
+              <button
+                onClick={() => setStatusFilter('rejected')}
+                className={`px-4 py-2 rounded-md text-sm font-medium ${
+                  statusFilter === 'rejected'
+                    ? 'bg-red-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                却下
+              </button>
+            </div>
+            <div className="text-sm text-gray-600">
               {filteredRequests.length}件の申請
             </div>
           </div>
@@ -437,7 +527,8 @@ export default function AdminRequestsPage() {
       {/* 申請一覧 */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="min-w-full">
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -462,9 +553,6 @@ export default function AdminRequestsPage() {
                   店舗連携
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  発行URL
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   操作
                 </th>
               </tr>
@@ -481,7 +569,7 @@ export default function AdminRequestsPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                      {getBusinessTypeLabel(request.business_type || 'other')}
+                      {getGenreName(request.genre_id)}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -518,41 +606,6 @@ export default function AdminRequestsPage() {
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    {request.status === 'approved' && request.generated_url ? (
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => copyToClipboard(request.generated_url!, request.id)}
-                          className="text-blue-600 hover:text-blue-900"
-                          title="URLをコピー"
-                        >
-                          {copySuccess === request.id ? (
-                            <span className="text-green-600">✓</span>
-                          ) : (
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                            </svg>
-                          )}
-                        </button>
-                        <button
-                          onClick={() => openUrlModal(request)}
-                          className="text-indigo-600 hover:text-indigo-900 text-xs"
-                        >
-                          詳細
-                        </button>
-                        <button
-                          onClick={() => router.push(`/admin/tokens/${request.id}`)}
-                          className="text-purple-600 hover:text-purple-900 text-xs"
-                        >
-                          管理
-                        </button>
-                      </div>
-                    ) : request.status === 'approved' ? (
-                      <span className="text-gray-400 text-xs">URL未生成</span>
-                    ) : (
-                      <span className="text-gray-400 text-xs">-</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <button
                       onClick={() => {
                         setSelectedRequest(request);
@@ -567,6 +620,7 @@ export default function AdminRequestsPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
 
@@ -588,7 +642,7 @@ export default function AdminRequestsPage() {
                     <label className="block text-sm font-medium text-gray-700">業態</label>
                     <p className="mt-1 text-sm text-gray-900">
                       <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                        {getBusinessTypeLabel(selectedRequest.business_type || 'other')}
+                        {getGenreName(selectedRequest.genre_id)}
                       </span>
                     </p>
                   </div>
@@ -825,7 +879,7 @@ export default function AdminRequestsPage() {
                         onClick={() => handleApprove(selectedRequest)}
                         className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
                       >
-                        承認・URL発行
+                        承認
                       </button>
                     </div>
                   </>
@@ -833,6 +887,72 @@ export default function AdminRequestsPage() {
 
                 {selectedRequest.status === 'approved' && (
                   <>
+                    <h3 className="text-lg font-semibold mb-3 mt-6">ログイン情報</h3>
+                    <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">ログインURL</label>
+                          <div className="mt-1 flex items-center space-x-2">
+                            <input
+                              type="text"
+                              readOnly
+                              value={`${window.location.origin}/admin/login?email=${encodeURIComponent(selectedRequest.applicant_email)}`}
+                              className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-md text-sm text-gray-900"
+                            />
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(`${window.location.origin}/admin/login?email=${encodeURIComponent(selectedRequest.applicant_email)}`);
+                                alert('URLをコピーしました');
+                              }}
+                              className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
+                            >
+                              コピー
+                            </button>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">メールアドレス（ログインID）</label>
+                          <p className="mt-1 text-sm text-gray-900">{selectedRequest.applicant_email}</p>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">パスワード</label>
+                          <div className="mt-1 flex items-center space-x-2">
+                            <div className="relative flex-1">
+                              <input
+                                type={showPassword ? "text" : "password"}
+                                readOnly
+                                value={selectedRequest.generated_password || ''}
+                                className="w-full px-3 py-2 pr-10 bg-white border border-gray-300 rounded-md text-sm text-gray-900"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                              >
+                                {showPassword ? (
+                                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                  </svg>
+                                ) : (
+                                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                  </svg>
+                                )}
+                              </button>
+                            </div>
+                            <button
+                              onClick={() => handleResetPassword(selectedRequest)}
+                              disabled={isResettingPassword}
+                              className="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm disabled:bg-gray-400"
+                            >
+                              {isResettingPassword ? 'リセット中...' : 'リセット'}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                     <h3 className="text-lg font-semibold mb-3 mt-6">承認済みアクション</h3>
                     <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
                       <div className="flex">
@@ -843,14 +963,14 @@ export default function AdminRequestsPage() {
                         </div>
                         <div className="ml-3">
                           <p className="text-sm text-yellow-700">
-                            承認を取り消すと、発行されたURLが無効になり、店舗側は編集できなくなります。
+                            承認を取り消すと、発行されたアカウントが無効になり、店舗側は編集できなくなります。
                           </p>
                         </div>
                       </div>
                     </div>
                     <button
                       onClick={() => {
-                        if (confirm('本当に承認を取り消しますか？\n発行されたURLは無効になります。')) {
+                        if (confirm('本当に承認を取り消しますか？\n発行されたアカウントは無効になります。')) {
                           handleCancelApproval(selectedRequest);
                         }
                       }}
@@ -903,7 +1023,7 @@ export default function AdminRequestsPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">業態</label>
-                      <p className="text-sm text-gray-900">{getBusinessTypeLabel(selectedRequest.business_type || 'restaurant')}</p>
+                      <p className="text-sm text-gray-900">{getGenreName(selectedRequest.genre_id)}</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">申請者</label>
@@ -985,91 +1105,6 @@ export default function AdminRequestsPage() {
                 <button
                   onClick={() => setShowComparisonModal(false)}
                   className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
-                >
-                  閉じる
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* URL詳細モーダル */}
-      {showUrlModal && selectedUrlRequest && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-gray-500 opacity-75" onClick={() => setShowUrlModal(false)}></div>
-          <div className="relative bg-white rounded-lg max-w-2xl w-full mx-4 p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">編集URL詳細</h2>
-              <button
-                onClick={() => setShowUrlModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">店舗名</label>
-                <p className="text-sm text-gray-900">{selectedUrlRequest.store_name}</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">発行日時</label>
-                <p className="text-sm text-gray-900">
-                  {selectedUrlRequest.reviewed_at ?
-                    new Date(selectedUrlRequest.reviewed_at).toLocaleString('ja-JP') :
-                    '未発行'}
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">編集URL</label>
-                <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
-                  <p className="text-sm text-gray-900 break-all font-mono">
-                    {selectedUrlRequest.generated_url || 'URLが生成されていません'}
-                  </p>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">トークン</label>
-                <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
-                  <p className="text-sm text-gray-900 break-all font-mono">
-                    {selectedUrlRequest.token || 'トークンが生成されていません'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex justify-between items-center pt-4 border-t">
-                <div className="flex space-x-3">
-                  {selectedUrlRequest.generated_url && (
-                    <button
-                      onClick={() => copyToClipboard(selectedUrlRequest.generated_url!, 'modal')}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center space-x-2"
-                    >
-                      {copySuccess === 'modal' ? (
-                        <>
-                          <span>✓</span>
-                          <span>コピー済み</span>
-                        </>
-                      ) : (
-                        <>
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                          </svg>
-                          <span>URLをコピー</span>
-                        </>
-                      )}
-                    </button>
-                  )}
-                </div>
-                <button
-                  onClick={() => setShowUrlModal(false)}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
                 >
                   閉じる
                 </button>

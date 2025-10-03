@@ -34,7 +34,8 @@ export async function POST(request: NextRequest) {
         rejection_reason: rejectionReason,
         admin_notes: adminNotes,
         reviewed_at: new Date().toISOString(),
-        processed_by: session.userId
+        processed_by: session.userId,
+        processed_at: new Date().toISOString()
       })
       .eq('id', requestId);
 

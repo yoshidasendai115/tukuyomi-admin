@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 export default function AdminLoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loginId, setLoginId] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -13,6 +14,14 @@ export default function AdminLoginPage() {
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [isBlocked, setIsBlocked] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // URLパラメータからemailを取得して自動入力
+  useEffect(() => {
+    const emailParam = searchParams.get('email');
+    if (emailParam) {
+      setLoginId(decodeURIComponent(emailParam));
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,8 +70,12 @@ export default function AdminLoginPage() {
         return;
       }
 
-      // 成功したらダッシュボードへリダイレクト
-      router.push('/admin/dashboard');
+      // ロールに応じてリダイレクト先を変更
+      if (data.role === 'store_owner' && data.assignedStoreId) {
+        router.push(`/admin/stores/${data.assignedStoreId}/edit`);
+      } else {
+        router.push('/admin/dashboard');
+      }
     } catch (err) {
       console.error('Login error:', err);
       setError('予期しないエラーが発生しました');

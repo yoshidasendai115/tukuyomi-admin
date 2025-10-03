@@ -1,22 +1,19 @@
 {
   "permissions": {
     "allow": [
-      "Bash(env PGPASSWORD:*)",
-      "Bash(env PGPASSWORD=\"6ptWpN0sMFRnFfwB\" psql -h aws-0-ap-northeast-1.pooler.supabase.com -p 6543 -U postgres.okntsiwxrgwabsemuxsq -d postgres -c \"SELECT login_id, display_name, role, is_active FROM admin_auth_users;\")",
-      "Bash(env PGPASSWORD=\"6ptWpN0sMFRnFfwB\" psql -h aws-0-ap-northeast-1.pooler.supabase.com -p 6543 -U postgres.okntsiwxrgwabsemuxsq -d postgres -c \"\\df authenticate_admin\")",
-      "Bash(env PGPASSWORD=\"6ptWpN0sMFRnFfwB\" psql -h aws-0-ap-northeast-1.pooler.supabase.com -p 6543 -U postgres.okntsiwxrgwabsemuxsq -d postgres -c \"SELECT authenticate_admin(''ys-yoshida'', ''Pass1234@!'', ''127.0.0.1'');\")",
-      "Bash(env PGPASSWORD=\"6ptWpN0sMFRnFfwB\" psql -h aws-0-ap-northeast-1.pooler.supabase.com -p 6543 -U postgres.okntsiwxrgwabsemuxsq -d postgres -c \"SELECT login_id, password_hash, md5(''Pass1234@!'') as test_hash FROM admin_auth_users WHERE login_id = ''ys-yoshida'';\")",
-      "Bash(env PGPASSWORD=\"6ptWpN0sMFRnFfwB\" psql -h aws-0-ap-northeast-1.pooler.supabase.com -p 6543 -U postgres.okntsiwxrgwabsemuxsq -d postgres -c \"UPDATE admin_auth_users SET password_hash = md5(''Pass1234@!'') WHERE login_id = ''ys-yoshida'';\")",
-      "Bash(env PGPASSWORD=\"6ptWpN0sMFRnFfwB\" psql -h aws-0-ap-northeast-1.pooler.supabase.com -p 6543 -U postgres.okntsiwxrgwabsemuxsq -d postgres -c \"UPDATE admin_auth_users SET failed_attempts = 0, locked_until = NULL WHERE login_id = ''ys-yoshida'';\")",
-      "Bash(env PGPASSWORD=\"6ptWpN0sMFRnFfwB\" psql -h aws-0-ap-northeast-1.pooler.supabase.com -p 6543 -U postgres.okntsiwxrgwabsemuxsq -d postgres -c \"SELECT prosrc FROM pg_proc WHERE proname = ''''authenticate_admin'''';\")",
-      "Bash(env PGPASSWORD=\"6ptWpN0sMFRnFfwB\" psql -h aws-0-ap-northeast-1.pooler.supabase.com -p 6543 -U postgres.okntsiwxrgwabsemuxsq -d postgres -c \"\\dv\")",
-      "Bash(env PGPASSWORD=\"6ptWpN0sMFRnFfwB\" psql -h aws-0-ap-northeast-1.pooler.supabase.com -p 6543 -U postgres.okntsiwxrgwabsemuxsq -d postgres -c \"\\dt\")",
-      "Bash(env PGPASSWORD=\"6ptWpN0sMFRnFfwB\" psql -h aws-0-ap-northeast-1.pooler.supabase.com -p 6543 -U postgres.okntsiwxrgwabsemuxsq -d postgres -c \"SELECT table_name FROM information_schema.tables WHERE table_schema = ''public'' AND table_name LIKE ''%favorite%'';\")",
-      "Bash(env PGPASSWORD=\"6ptWpN0sMFRnFfwB\" psql -h aws-0-ap-northeast-1.pooler.supabase.com -p 6543 -U postgres.okntsiwxrgwabsemuxsq -d postgres -c \"\\d favorites\")",
-      "Bash(env PGPASSWORD=\"6ptWpN0sMFRnFfwB\" psql -h aws-0-ap-northeast-1.pooler.supabase.com -p 6543 -U postgres.okntsiwxrgwabsemuxsq -d postgres -c \"\\d favorite_stores\")",
-      "Bash(find:*)",
-      "Bash(npx vercel env:*)",
-      "Bash(npx vercel:*)"
+      "Bash(PGPASSWORD=postgres psql:*)",
+      "Bash(awk:*)",
+      "Bash(export PGPASSWORD=postgres)",
+      "Bash(cat:*)",
+      "Read(//Users/yoshidaseiichi/yoshidasendai/tukuyomi/tukuyomi-web/supabase/migrations/**)",
+      "Bash(for table in admin_users broadcast_messages broadcast_recipients favorites message_cancellations message_templates user_messages users)",
+      "Bash(do echo \"=== $table ===\" grep -A 30 \"CREATE TABLE.*\"\"$table\"\"\" /Users/yoshidaseiichi/yoshidasendai/tukuyomi/tukuyomi-web/supabase/migrations/00000000000000_initial_schema.sql)",
+      "Read(//private/tmp/**)",
+      "Bash(osascript:*)",
+      "Bash(psql:*)",
+      "Bash(curl \"http://127.0.0.1:54321/storage/v1/object/public/admin-documents/store-applications/2025-10-03T03-10-34-747Z-kgfblwe8gp.png\")",
+      "Bash(supabase migration:*)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []

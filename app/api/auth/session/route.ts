@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     // データベースから最新の管理者情報を取得
     if (supabaseAdmin) {
       const { data: adminUser, error } = await supabaseAdmin
-        .from('admin_users')
+        .from('admin_auth_users')
         .select('*')
         .eq('id', session.userId)
         .single();
@@ -26,6 +26,7 @@ export async function GET(request: NextRequest) {
         session.displayName = adminUser.display_name;
         session.loginId = adminUser.login_id;
         session.role = adminUser.role;
+        session.assignedStoreId = adminUser.assigned_store_id;
       }
     }
 

@@ -30,7 +30,10 @@ export async function GET(request: NextRequest) {
 
     // 基本クエリを構築
     let countQuery = supabaseAdmin.from('stores').select('*', { count: 'exact', head: true });
-    let dataQuery = supabaseAdmin.from('stores').select('*');
+    let dataQuery = supabaseAdmin.from('stores').select(`
+      *,
+      genres!inner(name)
+    `);
 
     // 検索条件を適用（連続文字列として検索）
     if (search) {
@@ -83,9 +86,17 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // データを整形（genresからnameを抽出、stationをareaとして使用）
+    const formattedData = data?.map((store: any) => ({
+      ...store,
+      genre: store.genres?.name || null,
+      area: store.station || null,
+      genres: undefined // 元のgenresオブジェクトは削除
+    }));
+
     // ページネーション情報を含めて返す
     return NextResponse.json({
-      data,
+      data: formattedData,
       pagination: {
         total: totalCount || 0,
         page,

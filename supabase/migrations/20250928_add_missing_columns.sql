@@ -1,5 +1,5 @@
--- areasテーブルにline_ordersカラムを追加
-ALTER TABLE areas
+-- stationsテーブルにline_ordersカラムを追加
+ALTER TABLE stations
 ADD COLUMN IF NOT EXISTS line_orders jsonb;
 
 -- storesテーブルに不足しているカラムを追加

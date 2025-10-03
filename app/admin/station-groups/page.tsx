@@ -80,11 +80,11 @@ export default function StationGroupsPage() {
 
   const fetchAreas = async () => {
     try {
-      const response = await fetch('/api/masters/areas');
+      const response = await fetch('/api/masters/stations');
       const { data } = await response.json();
       setAreas(data || []);
     } catch (error) {
-      console.error('Error fetching areas:', error);
+      console.error('Error fetching stations:', error);
     }
   };
 
@@ -230,7 +230,7 @@ export default function StationGroupsPage() {
               </h2>
             </div>
 
-            <div className="overflow-hidden">
+            <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead>
                   <tr>

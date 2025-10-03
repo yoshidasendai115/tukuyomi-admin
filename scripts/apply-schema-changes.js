@@ -11,12 +11,12 @@ async function applySchemaChanges() {
 
   const changes = [
     {
-      name: 'Add railway_lines to areas',
-      sql: `ALTER TABLE areas ADD COLUMN IF NOT EXISTS railway_lines jsonb;`
+      name: 'Add railway_lines to stations',
+      sql: `ALTER TABLE stations ADD COLUMN IF NOT EXISTS railway_lines jsonb;`
     },
     {
-      name: 'Add line_orders to areas',
-      sql: `ALTER TABLE areas ADD COLUMN IF NOT EXISTS line_orders jsonb;`
+      name: 'Add line_orders to stations',
+      sql: `ALTER TABLE stations ADD COLUMN IF NOT EXISTS line_orders jsonb;`
     },
     {
       name: 'Add contact_phone_for_ga to stores',

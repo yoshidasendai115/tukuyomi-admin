@@ -56,7 +56,8 @@ export async function POST(request: NextRequest) {
         status: 'rejected',
         rejection_reason: reason || '管理者により承認が取り消されました',
         admin_notes: `承認取り消し: ${new Date().toISOString()} - ${reason || '理由未記載'}`,
-        reviewed_by: session.userId,
+        processed_by: session.userId,
+        processed_at: new Date().toISOString(),
         reviewed_at: new Date().toISOString()
       })
       .eq('id', requestId)
@@ -71,33 +72,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 関連するトークンを無効化
-    const { error: tokenError } = await supabaseAdmin
-      .from('admin_store_edit_tokens')
-      .update({
-        is_active: false
-      })
-      .eq('request_id', requestId);
-
-    if (tokenError) {
-      console.error('Failed to deactivate tokens:', tokenError);
-      // トークン無効化に失敗しても、承認取り消し自体は成功とする
-    }
-
-    // 関連するセッションを無効化
-    const { data: tokens } = await supabaseAdmin
-      .from('admin_store_edit_tokens')
-      .select('id')
-      .eq('request_id', requestId);
-
-    if (tokens && tokens.length > 0) {
-      const tokenIds = tokens.map(t => t.id);
-
-      await supabaseAdmin
-        .from('admin_store_edit_sessions')
-        .update({ is_active: false })
-        .in('token_id', tokenIds);
-    }
+    // TODO: Phase 6で実装 - 発行済みアカウントの無効化処理
 
     return NextResponse.json({
       success: true,

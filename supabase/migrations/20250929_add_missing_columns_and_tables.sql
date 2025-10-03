@@ -1,6 +1,6 @@
--- areasテーブルに不足しているカラムを追加
-ALTER TABLE areas ADD COLUMN IF NOT EXISTS railway_lines jsonb;
-ALTER TABLE areas ADD COLUMN IF NOT EXISTS line_orders jsonb;
+-- stationsテーブルに不足しているカラムを追加
+ALTER TABLE stations ADD COLUMN IF NOT EXISTS railway_lines jsonb;
+ALTER TABLE stations ADD COLUMN IF NOT EXISTS line_orders jsonb;
 
 -- storesテーブルに不足しているカラムを追加
 ALTER TABLE stores ADD COLUMN IF NOT EXISTS contact_phone_for_ga text;

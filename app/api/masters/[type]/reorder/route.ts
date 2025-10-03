@@ -34,7 +34,7 @@ export async function POST(
     const tableName = type;
 
     // 有効なテーブル名かチェック
-    if (!['areas', 'genres'].includes(tableName)) {
+    if (!['stations', 'genres'].includes(tableName)) {
       return NextResponse.json(
         { error: '無効なテーブル名です' },
         { status: 400 }

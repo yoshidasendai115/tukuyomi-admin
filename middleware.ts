@@ -8,6 +8,7 @@ export async function middleware(request: NextRequest) {
   // 公開ページ（認証不要）
   const publicPaths = [
     '/admin/login',
+    '/admin/unauthorized',
     '/test-db',
     '/',
     '/_next',
@@ -28,6 +29,35 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/admin/login', request.url));
     }
 
+    // store_ownerロールの場合、アクセス制限
+    if (session.role === 'store_owner') {
+      const assignedStoreId = session.assignedStoreId;
+
+      if (!assignedStoreId) {
+        // 店舗IDが未設定の場合はエラー
+        return NextResponse.redirect(new URL('/admin/unauthorized', request.url));
+      }
+
+      // 許可されたパス
+      const allowedPaths = [
+        `/admin/stores/${assignedStoreId}/edit`,
+        '/admin/logout',
+        '/api/stores/' + assignedStoreId,
+        '/api/owner/master-data'
+      ];
+
+      const isAllowed = allowedPaths.some(path => pathname.startsWith(path));
+
+      if (!isAllowed) {
+        console.log('[Middleware] STORE_OWNER: Blocking', {
+          pathname,
+          assignedStoreId,
+          allowedPaths
+        });
+        return NextResponse.redirect(new URL('/admin/unauthorized', request.url));
+      }
+    }
+
     // 認証済みの場合はアクセスを許可
     return NextResponse.next();
   }
@@ -38,12 +68,9 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
+     * 全てのパスにマッチ（静的ファイル以外）
+     * トークンモードチェックを最優先で行うため
      */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/((?!_next/static|_next/image).*)',
   ],
 };

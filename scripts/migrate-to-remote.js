@@ -96,7 +96,7 @@ async function main() {
   // 依存関係の順序でテーブルを移行
   const tables = [
     // 1. マスターテーブル（依存なし）
-    { name: 'areas', skipColumns: ['railway_lines', 'line_orders'] },
+    { name: 'stations', skipColumns: ['railway_lines', 'line_orders'] },
     { name: 'genres', skipColumns: [] },
     { name: 'station_groups', skipColumns: [] },
 

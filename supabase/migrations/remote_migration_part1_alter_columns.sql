@@ -67,10 +67,10 @@ ADD COLUMN IF NOT EXISTS opening_hours_text text,
 ADD COLUMN IF NOT EXISTS sync_priority integer;
 
 -- ============================================================================
--- 2. areasテーブルへのカラム追加
+-- 2. stationsテーブルへのカラム追加
 -- ============================================================================
 
-ALTER TABLE areas
+ALTER TABLE stations
 ADD COLUMN IF NOT EXISTS railway_lines jsonb,
 ADD COLUMN IF NOT EXISTS line_orders jsonb;
 

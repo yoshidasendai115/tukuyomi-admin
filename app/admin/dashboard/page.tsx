@@ -9,7 +9,6 @@ import { SessionData } from '@/lib/auth';
 interface DashboardStats {
   pendingRequests: number;
   approvedRequests: number;
-  activeTokens: number;
   totalStores: number;
 }
 
@@ -18,11 +17,12 @@ export default function AdminDashboardPage() {
   const [stats, setStats] = useState<DashboardStats>({
     pendingRequests: 0,
     approvedRequests: 0,
-    activeTokens: 0,
     totalStores: 0
   });
   const [session, setSession] = useState<SessionData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showSessionExpired, setShowSessionExpired] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -47,16 +47,36 @@ export default function AdminDashboardPage() {
 
   const checkAuth = async () => {
     try {
-      const response = await fetch('/api/auth/session');
+      const response = await fetch('/api/auth/session', {
+        signal: AbortSignal.timeout(5000) // 5秒でタイムアウト
+      });
+
       if (!response.ok) {
-        router.push('/admin/login');
+        // セッション切れまたは認証エラー
+        if (!isRedirecting) {
+          setIsRedirecting(true);
+          setShowSessionExpired(true);
+          setTimeout(() => {
+            router.push('/admin/login');
+          }, 2000);
+        }
         return;
       }
+
       const sessionData = await response.json();
       setSession(sessionData);
     } catch (error) {
+      // ネットワークエラーまたはタイムアウト
       console.error('Session fetch error:', error);
-      router.push('/admin/login');
+
+      // 既にリダイレクト中でなければセッション切れメッセージを表示
+      if (!isRedirecting) {
+        setIsRedirecting(true);
+        setShowSessionExpired(true);
+        setTimeout(() => {
+          router.push('/admin/login');
+        }, 2000);
+      }
     }
   };
 
@@ -73,13 +93,6 @@ export default function AdminDashboardPage() {
         .select('id', { count: 'exact' })
         .eq('status', 'approved');
 
-      // アクティブトークン数
-      const { data: tokenData } = await supabase
-        .from('admin_store_edit_tokens')
-        .select('id', { count: 'exact' })
-        .eq('is_active', true)
-        .gte('expires_at', new Date().toISOString());
-
       // 店舗数
       const { data: storeData } = await supabase
         .from('stores')
@@ -88,7 +101,6 @@ export default function AdminDashboardPage() {
       setStats({
         pendingRequests: pendingData?.length || 0,
         approvedRequests: approvedData?.length || 0,
-        activeTokens: tokenData?.length || 0,
         totalStores: storeData?.length || 0
       });
     } catch (error) {
@@ -106,6 +118,27 @@ export default function AdminDashboardPage() {
       console.error('Logout error:', error);
     }
   };
+
+  // セッション切れメッセージ
+  if (showSessionExpired) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center bg-white p-8 rounded-lg shadow-lg max-w-md">
+          <svg className="w-16 h-16 text-yellow-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">セッションが切れました</h2>
+          <p className="text-gray-600 mb-4">
+            セキュリティのため、自動的にログアウトしました。
+          </p>
+          <div className="flex items-center justify-center space-x-2">
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-600"></div>
+            <p className="text-sm text-gray-500">ログインページに移動しています...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -147,7 +180,7 @@ export default function AdminDashboardPage() {
       {/* メインコンテンツ */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* 統計カード */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center">
               <div className="p-3 bg-yellow-100 rounded-lg">
@@ -178,20 +211,6 @@ export default function AdminDashboardPage() {
 
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center">
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <svg className="h-8 w-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">有効トークン</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.activeTokens}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
               <div className="p-3 bg-purple-100 rounded-lg">
                 <svg className="h-8 w-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -208,27 +227,14 @@ export default function AdminDashboardPage() {
         {/* 店舗ユーザー管理 */}
         <div className="mb-8">
           <h2 className="text-lg font-semibold text-gray-700 mb-4">店舗ユーザー管理</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <Link
               href="/admin/requests"
               className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow"
             >
               <h3 className="text-lg font-semibold text-gray-900 mb-2">申請管理</h3>
               <p className="text-sm text-gray-600">
-                店舗編集URL申請の確認・承認・却下を行います
-              </p>
-              <div className="mt-4">
-                <span className="text-indigo-600 text-sm font-medium">管理画面へ →</span>
-              </div>
-            </Link>
-
-            <Link
-              href="/admin/tokens"
-              className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow"
-            >
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">トークン管理</h3>
-              <p className="text-sm text-gray-600">
-                発行済みトークンの確認・無効化を行います
+                店舗編集アカウント申請の確認・承認・却下を行います
               </p>
               <div className="mt-4">
                 <span className="text-indigo-600 text-sm font-medium">管理画面へ →</span>

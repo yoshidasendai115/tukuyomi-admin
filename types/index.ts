@@ -24,6 +24,8 @@ export interface StoreEditRequest {
   admin_notes?: string;
   rejection_reason?: string;
   reviewed_by?: string;
+  processed_by?: string;
+  processed_at?: string;
   reviewed_at?: string;
   created_at: string;
   updated_at: string;

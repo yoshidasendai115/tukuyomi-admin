@@ -63,7 +63,7 @@ export default function StationMasterPage() {
   const fetchStations = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/masters/areas');
+      const response = await fetch('/api/masters/stations');
       const { data } = await response.json();
       console.log('Fetched stations:', data); // デバッグ用
       setStations(data || []);
@@ -80,8 +80,11 @@ export default function StationMasterPage() {
     const stationsInLine: Station[] = [];
 
     lineStations.forEach((stationName, index) => {
+      // データベースの駅名は「駅」サフィックスが付いているので、比較時に追加
+      const stationNameWithSuffix = `${stationName}駅`;
+
       const station = stations.find(s =>
-        s.name === stationName &&
+        s.name === stationNameWithSuffix &&
         s.railway_lines?.includes(selectedLine)
       );
 
@@ -89,7 +92,7 @@ export default function StationMasterPage() {
         stationsInLine.push(station);
       } else {
         // 他の路線に存在する駅かチェック
-        const existingStation = stations.find(s => s.name === stationName);
+        const existingStation = stations.find(s => s.name === stationNameWithSuffix);
         if (existingStation) {
           // 駅は存在するが、この路線には未所属（路線追加が必要）
           stationsInLine.push({
@@ -122,7 +125,7 @@ export default function StationMasterPage() {
     if (!confirm(`${station.name}駅を削除しますか？`)) return;
 
     try {
-      await fetch(`/api/masters/areas/${station.id}`, {
+      await fetch(`/api/masters/stations/${station.id}`, {
         method: 'DELETE'
       });
       await fetchStations();
@@ -137,8 +140,8 @@ export default function StationMasterPage() {
     try {
       const method = editingStation ? 'PUT' : 'POST';
       const url = editingStation
-        ? `/api/masters/areas/${editingStation.id}`
-        : '/api/masters/areas';
+        ? `/api/masters/stations/${editingStation.id}`
+        : '/api/masters/stations';
 
       // 路線内順序を自動設定
       if (!editingStation && formData.railway_lines) {
@@ -213,12 +216,6 @@ export default function StationMasterPage() {
               </p>
             </div>
             <div className="space-x-4">
-              <Link
-                href="/admin/masters"
-                className="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
-              >
-                マスタ管理へ戻る
-              </Link>
               <Link
                 href="/admin/dashboard"
                 className="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
@@ -368,7 +365,7 @@ export default function StationMasterPage() {
                               };
 
                               try {
-                                const response = await fetch(`/api/masters/areas/${realId}`, {
+                                const response = await fetch(`/api/masters/stations/${realId}`, {
                                   method: 'PUT',
                                   headers: { 'Content-Type': 'application/json' },
                                   body: JSON.stringify(updatedStation)
@@ -403,7 +400,7 @@ export default function StationMasterPage() {
                               };
 
                               try {
-                                const response = await fetch('/api/masters/areas', {
+                                const response = await fetch('/api/masters/stations', {
                                   method: 'POST',
                                   headers: { 'Content-Type': 'application/json' },
                                   body: JSON.stringify(newStation)

@@ -45,10 +45,15 @@ export async function POST(request: NextRequest) {
     const fileName = `${timestamp}-${randomString}.${fileExtension}`;
     const filePath = `${folder}/${fileName}`;
 
+    // FileオブジェクトをArrayBufferに変換
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
     // Supabase Storageにアップロード
     const { data, error } = await supabaseAdmin.storage
       .from('admin-documents')
-      .upload(filePath, file, {
+      .upload(filePath, buffer, {
+        contentType: file.type,
         cacheControl: '3600',
         upsert: false
       });

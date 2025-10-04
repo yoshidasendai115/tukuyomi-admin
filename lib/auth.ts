@@ -14,6 +14,7 @@ export interface SessionData {
   role: string;
   permissions: any;
   assignedStoreId?: string; // store_ownerロールの場合のみ
+  allowedUrl?: string; // store_ownerロールの許可されたURL
 }
 
 export async function createSession(data: SessionData) {
@@ -69,4 +70,19 @@ export async function verifySession(request: NextRequest): Promise<SessionData |
 export async function deleteSession() {
   const cookieStore = await cookies();
   cookieStore.delete('admin_session');
+}
+
+export async function requireAdmin(): Promise<SessionData> {
+  const session = await getSession();
+
+  if (!session) {
+    throw new Error('Unauthorized');
+  }
+
+  // store_ownerロールは管理画面にアクセス不可
+  if (session.role === 'store_owner') {
+    throw new Error('Forbidden');
+  }
+
+  return session;
 }

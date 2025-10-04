@@ -105,7 +105,6 @@ export async function PATCH(
       'maximum_hourly_wage',
       'recruitment_status',
       'recruitment_message',
-      'is_recommended',
       'priority_score',
       'recommendation_reason',
       'recommended_at',

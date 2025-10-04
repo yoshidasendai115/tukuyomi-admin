@@ -623,18 +623,13 @@ function AdminStoreEditPageContent({ params }: PageProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // 優先度スコアの重複チェック
-    if (formData.priority_score && formData.priority_score > 0) {
-      if (priorityScoreConflict.exists) {
-        alert(`優先度スコア ${formData.priority_score} は既に「${priorityScoreConflict.storeName}」で使用されています。別の値を設定してください。`);
-        return;
-      }
-    }
-
     setIsSaving(true);
 
     try {
       let updatedFormData = { ...formData };
+
+      // priority_scoreに基づいてis_recommendedを自動設定
+      updatedFormData.is_recommended = (formData.priority_score === 3 || formData.priority_score === 5);
 
       // メイン画像のアップロード
       if (mainImageFile) {
@@ -749,8 +744,8 @@ function AdminStoreEditPageContent({ params }: PageProps) {
     // { id: 'welfare', label: '福利厚生' }, // 非表示
     // { id: 'sns', label: 'SNS・Web' }, // 基本情報に統合
     { id: 'message', label: 'お知らせ配信' },
-    // store_ownerロール以外は優先表示設定タブを表示
-    ...(!isStoreOwner ? [{ id: 'priority', label: '優先表示設定' }] : [])
+    // store_ownerロール以外はプラン設定タブを表示
+    ...(!isStoreOwner ? [{ id: 'priority', label: 'プラン設定' }] : [])
   ];
 
   const dayNames = {
@@ -2143,7 +2138,7 @@ function AdminStoreEditPageContent({ params }: PageProps) {
               </div>
             )}
 
-            {/* 優先表示設定タブ - システム管理者専用 */}
+            {/* プラン設定タブ - システム管理者専用 */}
             {activeTab === 'priority' && !isStoreOwner && (
               <div className="space-y-6">
                 <div className="bg-yellow-50 p-4 rounded-lg">
@@ -2158,80 +2153,126 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                         システム管理者専用設定
                       </h3>
                       <div className="mt-2 text-sm text-yellow-700">
-                        <p>この設定は管理者権限でのみ変更可能です。優先表示設定は全ユーザーの検索結果に影響します。</p>
+                        <p>この設定は管理者権限でのみ変更可能です。プラン設定は全ユーザーの検索結果に影響します。</p>
                       </div>
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-4">
-                  {/* おすすめ設定 */}
+                  {/* プラン選択 */}
                   <div>
-                    <label className="flex items-center space-x-3">
-                      <input
-                        type="checkbox"
-                        name="is_recommended"
-                        checked={formData.is_recommended || false}
-                        onChange={handleInputChange}
-                        className="h-5 w-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                      />
-                      <span className="text-lg font-medium text-gray-900">
-                        ⭐ おすすめ店舗として表示
-                      </span>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      優先表示プラン
                     </label>
-                    <p className="ml-8 mt-1 text-sm text-gray-500">
-                      チェックすると検索結果の上位に優先的に表示されます
-                    </p>
-                  </div>
-
-                  {/* 優先度スコア */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      優先度スコア（0〜100）
-                    </label>
-                    <div className="flex items-center space-x-4">
-                      <input
-                        type="range"
-                        name="priority_score"
-                        value={formData.priority_score || 0}
-                        onChange={handleInputChange}
-                        min="0"
-                        max="100"
-                        className="flex-1"
-                      />
-                      <input
-                        type="number"
-                        name="priority_score"
-                        value={formData.priority_score || 0}
-                        onChange={handleInputChange}
-                        min="0"
-                        max="100"
-                        className={`w-20 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                          priorityScoreConflict.exists
-                            ? 'border-red-300 focus:ring-red-500'
-                            : 'border-gray-300 focus:ring-indigo-500'
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {/* Freeプランカード */}
+                      <div
+                        className={`border-2 rounded-lg p-6 cursor-pointer transition-all relative ${
+                          formData.priority_score === 0
+                            ? 'border-blue-500 bg-blue-50 shadow-md'
+                            : 'border-gray-300 hover:border-blue-300 hover:shadow-sm'
                         }`}
-                      />
+                        onClick={() => {
+                          setFormData(prev => ({ ...prev, priority_score: 0 }));
+                        }}
+                      >
+                        {/* ラジオボタン */}
+                        <div className="absolute top-4 right-4">
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                            formData.priority_score === 0
+                              ? 'border-blue-500 bg-blue-500'
+                              : 'border-gray-400 bg-white'
+                          }`}>
+                            {formData.priority_score === 0 && (
+                              <div className="w-2 h-2 rounded-full bg-white"></div>
+                            )}
+                          </div>
+                        </div>
+                        <h3 className="text-lg font-bold text-gray-900">Free</h3>
+                        <p className="text-3xl font-bold mt-2 text-gray-900">無料</p>
+                        <ul className="text-sm text-gray-600 mt-3 space-y-1">
+                          <li>• 基本表示のみ</li>
+                          <li>• 検索結果に表示</li>
+                        </ul>
+                      </div>
+
+                      {/* Standardプランカード - シルバー */}
+                      <div
+                        className={`border-2 rounded-lg p-6 cursor-pointer transition-all relative ${
+                          formData.priority_score === 3
+                            ? 'border-gray-500 bg-gray-100 shadow-md'
+                            : 'border-gray-300 hover:border-gray-400 hover:shadow-sm'
+                        }`}
+                        onClick={() => {
+                          setFormData(prev => ({ ...prev, priority_score: 3 }));
+                        }}
+                      >
+                        {/* ラジオボタン */}
+                        <div className="absolute top-4 right-4">
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                            formData.priority_score === 3
+                              ? 'border-gray-600 bg-gray-600'
+                              : 'border-gray-400 bg-white'
+                          }`}>
+                            {formData.priority_score === 3 && (
+                              <div className="w-2 h-2 rounded-full bg-white"></div>
+                            )}
+                          </div>
+                        </div>
+                        <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                          Standard <span className="text-gray-500">🥈</span>
+                        </h3>
+                        <p className="text-3xl font-bold mt-2 text-gray-900">月980円</p>
+                        <ul className="text-sm text-gray-600 mt-3 space-y-1">
+                          <li>• シルバー表示</li>
+                          <li>• おすすめ一覧に掲載</li>
+                        </ul>
+                      </div>
+
+                      {/* Premiumプランカード - ゴールド */}
+                      <div
+                        className={`border-2 rounded-lg p-6 cursor-pointer transition-all relative ${
+                          formData.priority_score === 5
+                            ? 'border-yellow-500 bg-yellow-50 shadow-md'
+                            : 'border-gray-300 hover:border-yellow-400 hover:shadow-sm'
+                        }`}
+                        onClick={() => {
+                          setFormData(prev => ({ ...prev, priority_score: 5 }));
+                        }}
+                      >
+                        {/* ラジオボタン */}
+                        <div className="absolute top-4 right-4">
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                            formData.priority_score === 5
+                              ? 'border-yellow-600 bg-yellow-600'
+                              : 'border-gray-400 bg-white'
+                          }`}>
+                            {formData.priority_score === 5 && (
+                              <div className="w-2 h-2 rounded-full bg-white"></div>
+                            )}
+                          </div>
+                        </div>
+                        <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                          Premium <span className="text-yellow-500">🥇</span>
+                        </h3>
+                        <p className="text-3xl font-bold mt-2 text-gray-900">月1,980円</p>
+                        <ul className="text-sm text-gray-600 mt-3 space-y-1">
+                          <li>• ゴールド表示</li>
+                          <li>• トップページ掲載</li>
+                          <li>• 最優先表示</li>
+                        </ul>
+                      </div>
                     </div>
-                    {priorityScoreConflict.exists && (
-                      <p className="mt-2 text-sm text-red-600 flex items-center">
-                        <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                        </svg>
-                        この優先度スコアは既に「{priorityScoreConflict.storeName}」で使用されています
-                      </p>
-                    )}
-                    <p className="mt-1 text-sm text-gray-500">
-                      数値が高いほど優先的に表示されます（通常: 0〜30、重要: 31〜70、最重要: 71〜100）
-                      <br />
-                      ※ 0以外の値は他の店舗と重複できません（最大99件まで）
+                    <p className="mt-3 text-sm text-gray-500">
+                      ※ 同じプラン内ではランダムに表示されます
                     </p>
                   </div>
 
-                  {/* おすすめ理由 */}
+                  {/* 内部メモ */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      おすすめ理由（内部メモ）
+                      内部メモ
                     </label>
                     <textarea
                       name="recommendation_reason"
@@ -2264,28 +2305,6 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                     </div>
                   )}
 
-                  {/* プレビュー */}
-                  {formData.is_recommended && (
-                    <div className="bg-indigo-50 p-4 rounded-lg">
-                      <h4 className="text-sm font-medium text-indigo-900 mb-2">表示プレビュー</h4>
-                      <div className="bg-white p-3 rounded border-2 border-indigo-200">
-                        <div className="flex items-start space-x-2">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                            ⭐ おすすめ
-                          </span>
-                          {formData.priority_score && formData.priority_score >= 90 && (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                              優先度: {formData.priority_score}
-                            </span>
-                          )}
-                          <div className="flex-1">
-                            <h3 className="font-medium text-gray-900">{store?.name || '店舗名'}</h3>
-                            <p className="text-sm text-gray-500">検索結果の上位に表示されます</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             )}

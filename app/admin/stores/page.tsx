@@ -487,7 +487,7 @@ function StoresPageContent() {
                   対象店舗
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-32">
-                  優先表示
+                  プラン
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-28">
                   操作
@@ -531,21 +531,21 @@ function StoresPageContent() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap min-w-32">
                     <div className="flex flex-col space-y-1">
-                      <button
-                        onClick={() => handleRecommendToggle(store.id, store.is_recommended)}
-                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          store.is_recommended
-                            ? 'bg-yellow-400 text-yellow-900'
-                            : 'bg-gray-100 text-gray-600'
-                        }`}
-                      >
-                        {store.is_recommended ? '★ おすすめ' : '通常'}
-                      </button>
+                      {store.priority_score === 5 ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-400">
+                          🥇 Premium
+                        </span>
+                      ) : store.priority_score === 3 ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-400">
+                          🥈 Standard
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                          Free
+                        </span>
+                      )}
                       {store.is_recommended && (
-                        <div className="flex items-center space-x-1">
-                          <span className="text-xs text-gray-500">優先度:</span>
-                          <span className="text-xs font-medium text-gray-900">{store.priority_score}</span>
-                        </div>
+                        <span className="text-xs text-gray-500">★ おすすめ</span>
                       )}
                     </div>
                   </td>

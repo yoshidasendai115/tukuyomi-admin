@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     const area = searchParams.get('area') || '';
     const genre = searchParams.get('genre') || '';
     const showInactive = searchParams.get('showInactive') === 'true';
-    const showRecommendedOnly = searchParams.get('showRecommendedOnly') === 'true';
+    const plan = searchParams.get('plan') || 'all';
     const offset = (page - 1) * limit;
 
     // 基本クエリを構築
@@ -64,10 +64,20 @@ export async function GET(request: NextRequest) {
       dataQuery = dataQuery.eq('is_active', true);
     }
 
-    // おすすめ店舗フィルタ（showRecommendedOnlyがtrueの場合のみおすすめ店舗を表示）
-    if (showRecommendedOnly) {
-      countQuery = countQuery.eq('is_recommended', true);
-      dataQuery = dataQuery.eq('is_recommended', true);
+    // プランフィルタ（priority_scoreで絞り込み）
+    if (plan !== 'all') {
+      let priorityScore: number;
+      if (plan === 'free') {
+        priorityScore = 0;
+      } else if (plan === 'standard') {
+        priorityScore = 3;
+      } else if (plan === 'premium') {
+        priorityScore = 5;
+      } else {
+        priorityScore = 0; // デフォルトはFree
+      }
+      countQuery = countQuery.eq('priority_score', priorityScore);
+      dataQuery = dataQuery.eq('priority_score', priorityScore);
     }
 
     // 総数を取得

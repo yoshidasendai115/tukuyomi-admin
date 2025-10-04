@@ -58,7 +58,7 @@ function StoresPageContent() {
   const [selectedArea, setSelectedArea] = useState(searchParams.get('area') || '');
   const [selectedGenre, setSelectedGenre] = useState(searchParams.get('genre') || '');
   const [showInactive, setShowInactive] = useState(searchParams.get('showInactive') === 'true');
-  const [showRecommendedOnly, setShowRecommendedOnly] = useState(searchParams.get('showRecommendedOnly') === 'true');
+  const [selectedPlan, setSelectedPlan] = useState<string>(searchParams.get('plan') || 'all'); // 'all', 'free', 'standard', 'premium'
   const [areaInput, setAreaInput] = useState(searchParams.get('area') || '');
   const [showAreaSuggestions, setShowAreaSuggestions] = useState(false);
   const [filteredAreas, setFilteredAreas] = useState<Area[]>([]);
@@ -129,7 +129,7 @@ function StoresPageContent() {
 
   useEffect(() => {
     fetchData();
-  }, [currentPage, searchTerm, selectedArea, selectedGenre, showInactive, showRecommendedOnly]);
+  }, [currentPage, searchTerm, selectedArea, selectedGenre, showInactive, selectedPlan]);
 
   // フィルター変更時にURLパラメータを更新
   useEffect(() => {
@@ -139,12 +139,12 @@ function StoresPageContent() {
     if (selectedArea) params.set('area', selectedArea);
     if (selectedGenre) params.set('genre', selectedGenre);
     if (showInactive) params.set('showInactive', 'true');
-    if (showRecommendedOnly) params.set('showRecommendedOnly', 'true');
+    if (selectedPlan !== 'all') params.set('plan', selectedPlan);
     if (currentPage > 1) params.set('page', currentPage.toString());
 
     const newUrl = `${window.location.pathname}?${params.toString()}`;
     router.replace(newUrl);
-  }, [searchTerm, selectedArea, selectedGenre, showInactive, showRecommendedOnly, currentPage, router]);
+  }, [searchTerm, selectedArea, selectedGenre, showInactive, selectedPlan, currentPage, router]);
 
   useEffect(() => {
     // 検索条件が変更されたらページをリセット
@@ -168,7 +168,7 @@ function StoresPageContent() {
         area: selectedArea,
         genre: selectedGenre,
         showInactive: showInactive.toString(),
-        showRecommendedOnly: showRecommendedOnly.toString()
+        plan: selectedPlan
       });
 
       // 初回のみマスタデータも取得
@@ -284,10 +284,10 @@ function StoresPageContent() {
     if (selectedArea) params.set('area', selectedArea);
     if (selectedGenre) params.set('genre', selectedGenre);
     if (showInactive) params.set('showInactive', 'true');
-    if (showRecommendedOnly) params.set('showRecommendedOnly', 'true');
+    if (selectedPlan !== 'all') params.set('plan', selectedPlan);
     if (currentPage > 1) params.set('page', currentPage.toString());
     return params.toString();
-  }, [searchTerm, selectedArea, selectedGenre, showInactive, showRecommendedOnly, currentPage]);
+  }, [searchTerm, selectedArea, selectedGenre, showInactive, selectedPlan, currentPage]);
 
   const handleRecommendUpdate = async (storeId: string, isRecommended: boolean, score: number, reason: string) => {
     try {
@@ -356,8 +356,8 @@ function StoresPageContent() {
 
         {/* 検索フィルター */}
         <div className="bg-white rounded-lg shadow mb-6 p-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
+          <div className="flex flex-wrap gap-4">
+            <div className="flex-1 min-w-[200px]">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 店舗名検索
               </label>
@@ -370,7 +370,7 @@ function StoresPageContent() {
               />
             </div>
 
-            <div>
+            <div className="flex-1 min-w-[150px]">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 業態
               </label>
@@ -386,7 +386,7 @@ function StoresPageContent() {
               </select>
             </div>
 
-            <div className="relative">
+            <div className="flex-1 min-w-[200px] relative">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 駅
               </label>
@@ -427,10 +427,24 @@ function StoresPageContent() {
               </div>
             </div>
 
-            <div>
+            <div className="flex-1 min-w-[150px]">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                対象店舗
+                プラン
               </label>
+              <select
+                id="plan-select"
+                value={selectedPlan}
+                onChange={(e) => setSelectedPlan(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900"
+              >
+                <option value="all">すべて</option>
+                <option value="free">Free</option>
+                <option value="standard">Standard</option>
+                <option value="premium">Premium</option>
+              </select>
+            </div>
+
+            <div className="flex items-end min-w-[180px]">
               <div className="flex items-center h-10">
                 <input
                   type="checkbox"
@@ -441,18 +455,6 @@ function StoresPageContent() {
                 />
                 <label htmlFor="show-inactive" className="text-sm text-gray-700">
                   無効な店舗も表示
-                </label>
-              </div>
-              <div className="flex items-center h-10">
-                <input
-                  type="checkbox"
-                  id="show-recommended-only"
-                  checked={showRecommendedOnly}
-                  onChange={(e) => setShowRecommendedOnly(e.target.checked)}
-                  className="mr-2"
-                />
-                <label htmlFor="show-recommended-only" className="text-sm text-gray-700">
-                  優先度設定ありのみ
                 </label>
               </div>
             </div>

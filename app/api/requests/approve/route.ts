@@ -99,6 +99,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // IPアドレスの取得
+    const ip = request.headers.get('x-forwarded-for') ||
+                request.headers.get('x-real-ip') ||
+                'unknown';
+
+    // アクセスログに記録
+    await supabaseAdmin
+      .from('admin_access_logs')
+      .insert({
+        action: 'request_approved',
+        details: {
+          request_id: requestId,
+          store_id: requestData.store_id,
+          applicant_email: requestData.applicant_email,
+          processed_by: session.userId,
+          processed_by_name: session.displayName
+        },
+        ip_address: ip,
+        user_agent: request.headers.get('user-agent') || undefined
+      });
+
     return NextResponse.json({
       success: true,
       message: '申請を承認しました',

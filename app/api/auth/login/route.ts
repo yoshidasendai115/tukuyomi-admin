@@ -79,6 +79,18 @@ export async function POST(request: NextRequest) {
 
     // アカウントが無効化されている場合
     if (!user.is_active) {
+      await supabaseAdmin
+        .from('admin_access_logs')
+        .insert({
+          action: 'admin_login_blocked',
+          details: {
+            login_id: loginId,
+            reason: 'account_inactive'
+          },
+          ip_address: ip,
+          user_agent: request.headers.get('user-agent') || undefined
+        });
+
       return NextResponse.json(
         { message: 'このアカウントは無効化されています。管理者にお問い合わせください。' },
         { status: 401 }
@@ -92,6 +104,19 @@ export async function POST(request: NextRequest) {
 
     // ブロック期間中かチェック
     if (lockedUntil && lockedUntil > new Date()) {
+      await supabaseAdmin
+        .from('admin_access_logs')
+        .insert({
+          action: 'admin_login_blocked',
+          details: {
+            login_id: loginId,
+            reason: 'too_many_attempts',
+            locked_until: lockedUntil.toISOString()
+          },
+          ip_address: ip,
+          user_agent: request.headers.get('user-agent') || undefined
+        });
+
       return NextResponse.json(
         {
           message: 'ログイン試行回数の上限に達しました。30分後に再度お試しください。',
@@ -125,6 +150,20 @@ export async function POST(request: NextRequest) {
         .update(updateData)
         .eq('id', user.id);
 
+      // ログイン失敗をログに記録
+      await supabaseAdmin
+        .from('admin_access_logs')
+        .insert({
+          action: newFailedAttempts >= maxAttempts ? 'admin_login_blocked' : 'admin_login_failed',
+          details: {
+            login_id: loginId,
+            attempts: newFailedAttempts,
+            max_attempts: maxAttempts
+          },
+          ip_address: ip,
+          user_agent: request.headers.get('user-agent') || undefined
+        });
+
       const attemptsRemaining = Math.max(0, maxAttempts - newFailedAttempts);
 
       return NextResponse.json(
@@ -146,6 +185,20 @@ export async function POST(request: NextRequest) {
         last_login_at: new Date().toISOString()
       })
       .eq('id', user.id);
+
+    // ログイン成功をログに記録
+    await supabaseAdmin
+      .from('admin_access_logs')
+      .insert({
+        action: 'admin_login_success',
+        details: {
+          login_id: loginId,
+          user_id: user.id,
+          role: user.role
+        },
+        ip_address: ip,
+        user_agent: request.headers.get('user-agent') || undefined
+      });
 
     // セッション作成
     console.log('Creating session...');

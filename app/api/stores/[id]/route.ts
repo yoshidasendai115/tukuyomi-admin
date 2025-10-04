@@ -208,6 +208,27 @@ export async function PATCH(
       );
     }
 
+    // IPアドレスの取得
+    const ip = request.headers.get('x-forwarded-for') ||
+                request.headers.get('x-real-ip') ||
+                'unknown';
+
+    // アクセスログに記録
+    await supabaseAdmin
+      .from('admin_access_logs')
+      .insert({
+        action: 'store_updated',
+        details: {
+          store_id: storeId,
+          store_name: data.name,
+          updated_fields: Object.keys(updateData),
+          updated_by: session.userId,
+          updated_by_name: session.displayName
+        },
+        ip_address: ip,
+        user_agent: request.headers.get('user-agent') || undefined
+      });
+
     return NextResponse.json({
       success: true,
       data
@@ -260,6 +281,26 @@ export async function DELETE(
         { status: 500 }
       );
     }
+
+    // IPアドレスの取得
+    const ip = request.headers.get('x-forwarded-for') ||
+                request.headers.get('x-real-ip') ||
+                'unknown';
+
+    // アクセスログに記録
+    await supabaseAdmin
+      .from('admin_access_logs')
+      .insert({
+        action: 'store_deleted',
+        details: {
+          store_id: storeId,
+          store_name: data.name,
+          deleted_by: session.userId,
+          deleted_by_name: session.displayName
+        },
+        ip_address: ip,
+        user_agent: request.headers.get('user-agent') || undefined
+      });
 
     return NextResponse.json({
       success: true,

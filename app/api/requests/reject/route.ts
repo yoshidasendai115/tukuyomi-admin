@@ -47,6 +47,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // IPアドレスの取得
+    const ip = request.headers.get('x-forwarded-for') ||
+                request.headers.get('x-real-ip') ||
+                'unknown';
+
+    // アクセスログに記録
+    await supabaseAdmin
+      .from('admin_access_logs')
+      .insert({
+        action: 'request_rejected',
+        details: {
+          request_id: requestId,
+          rejection_reason: rejectionReason,
+          admin_notes: adminNotes,
+          processed_by: session.userId,
+          processed_by_name: session.displayName
+        },
+        ip_address: ip,
+        user_agent: request.headers.get('user-agent') || undefined
+      });
+
     return NextResponse.json({
       success: true,
       message: '申請を却下しました'

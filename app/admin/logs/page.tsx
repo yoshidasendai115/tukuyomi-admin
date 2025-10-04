@@ -57,7 +57,9 @@ export default function LogsPage() {
       'admin_login_success': 'ログイン成功',
       'admin_login_failed': 'ログイン失敗',
       'admin_login_blocked': 'ログインブロック',
+      'admin_logout': 'ログアウト',
       'store_updated': '店舗情報更新',
+      'store_deleted': '店舗削除',
       'request_approved': '申請承認',
       'request_rejected': '申請却下',
     };

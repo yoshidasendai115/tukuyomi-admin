@@ -10,8 +10,8 @@ interface Area {
 
 interface StationGroupMember {
   id: string;
-  area_id: string;
-  area?: Area;
+  station_id: string;
+  station?: Area;
 }
 
 interface StationGroup {
@@ -136,7 +136,7 @@ export default function StationGroupsPage() {
       display_name: group.display_name,
       is_major_terminal: group.is_major_terminal,
       description: group.description || '',
-      member_area_ids: group.station_group_members?.map(m => m.area_id) || []
+      member_area_ids: group.station_group_members?.map(m => m.station_id) || []
     });
     setAreaSearchQuery(''); // 検索フィールドをクリア
     setShowModal(true);
@@ -517,7 +517,7 @@ export default function StationGroupsPage() {
                       <ul className="space-y-1">
                         {selectedGroup.station_group_members.map((member) => (
                           <li key={member.id} className="text-sm text-gray-900">
-                            • {getAreaName(member.area_id)}
+                            • {getAreaName(member.station_id)}
                           </li>
                         ))}
                       </ul>

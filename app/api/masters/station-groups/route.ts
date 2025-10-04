@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
         *,
         station_group_members (
           id,
-          area_id
+          station_id
         )
       `)
       .order('name', { ascending: true });

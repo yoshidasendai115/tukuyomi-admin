@@ -5,18 +5,25 @@ import { getSession } from '@/lib/auth';
 // GET: 駅グループ一覧取得
 export async function GET(request: NextRequest) {
   try {
+    console.log('[station-groups] GET request received');
+
     const session = await getSession();
+    console.log('[station-groups] Session check:', { hasSession: !!session, role: session?.role });
+
     if (!session) {
+      console.log('[station-groups] Unauthorized: No session');
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
     if (!supabaseAdmin) {
+      console.error('[station-groups] Supabase admin client not initialized');
       return NextResponse.json(
         { message: 'サーバー設定エラー' },
         { status: 500 }
       );
     }
 
+    console.log('[station-groups] Querying station_groups table...');
     const { data, error } = await supabaseAdmin
       .from('station_groups')
       .select(`
@@ -29,7 +36,12 @@ export async function GET(request: NextRequest) {
       .order('name', { ascending: true });
 
     if (error) {
-      console.error('Error fetching station groups:', error);
+      console.error('[station-groups] Supabase query error:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
       return NextResponse.json({
         error: error.message,
         details: error.details,
@@ -38,9 +50,10 @@ export async function GET(request: NextRequest) {
       }, { status: 500 });
     }
 
+    console.log('[station-groups] Query successful, returning', data?.length || 0, 'groups');
     return NextResponse.json({ data: data || [] });
   } catch (error) {
-    console.error('Error:', error);
+    console.error('[station-groups] Unexpected error:', error);
     const errorMessage = error instanceof Error ? error.message : '予期しないエラーが発生しました';
     const errorStack = error instanceof Error ? error.stack : undefined;
     return NextResponse.json(

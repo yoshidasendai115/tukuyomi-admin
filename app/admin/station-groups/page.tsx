@@ -71,6 +71,15 @@ export default function StationGroupsPage() {
   const fetchGroups = async () => {
     try {
       const response = await fetch('/api/masters/station-groups');
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('API Error Response:', {
+          status: response.status,
+          statusText: response.statusText,
+          data: errorData
+        });
+        throw new Error(`API Error: ${response.status} - ${JSON.stringify(errorData)}`);
+      }
       const { data } = await response.json();
       setGroups(data || []);
     } catch (error) {

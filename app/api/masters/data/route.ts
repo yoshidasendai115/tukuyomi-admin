@@ -39,9 +39,34 @@ export async function GET() {
       );
     }
 
+    // 駅マスタを取得
+    const { data: stations, error: stationError } = await supabaseAdmin
+      .from('stations')
+      .select('id, name, railway_lines')
+      .order('name', { ascending: true });
+
+    if (stationError) {
+      console.error('Error fetching stations:', stationError);
+      return NextResponse.json(
+        { error: '駅マスタの取得に失敗しました' },
+        { status: 500 }
+      );
+    }
+
+    // 路線リストを抽出（重複除去）
+    const railwayLinesSet = new Set<string>();
+    stations?.forEach(station => {
+      if (station.railway_lines && Array.isArray(station.railway_lines)) {
+        station.railway_lines.forEach(line => railwayLinesSet.add(line));
+      }
+    });
+    const railwayLines = Array.from(railwayLinesSet).sort();
+
     return NextResponse.json({
       genres: genres || [],
-      areas: areas || []
+      areas: areas || [],
+      stations: stations || [],
+      railwayLines: railwayLines || []
     });
   } catch (error) {
     console.error('Error in master-data API:', error);

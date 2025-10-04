@@ -46,10 +46,10 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // エリアフィルタ
+    // エリアフィルタ（stationカラムで検索）
     if (area) {
-      countQuery = countQuery.eq('area', area);
-      dataQuery = dataQuery.eq('area', area);
+      countQuery = countQuery.eq('station', area);
+      dataQuery = dataQuery.eq('station', area);
     }
 
     // ジャンルフィルタ

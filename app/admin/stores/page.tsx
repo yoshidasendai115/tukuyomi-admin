@@ -102,7 +102,7 @@ function StoresPageContent() {
     if (areaInput.trim() === '') {
       setFilteredAreas([]);
       setShowAreaSuggestions(false);
-    } else {
+    } else if (areas && areas.length > 0) {
       const filtered = areas.filter(area =>
         area.name.toLowerCase().includes(areaInput.toLowerCase())
       );

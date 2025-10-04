@@ -370,7 +370,7 @@ function AdminStoreEditPageContent({ params }: PageProps) {
 
     // 駅名入力時のサジェスト表示
     if (name === 'station') {
-      if (value.length > 0) {
+      if (value.length > 0 && masterData.stations) {
         const filtered = masterData.stations.filter(station =>
           station.name.toLowerCase().includes(value.toLowerCase())
         );
@@ -383,7 +383,7 @@ function AdminStoreEditPageContent({ params }: PageProps) {
 
     // 路線入力時のサジェスト表示
     if (name === 'station_line') {
-      if (value.length > 0) {
+      if (value.length > 0 && masterData.railwayLines) {
         const filtered = masterData.railwayLines.filter(line =>
           line.toLowerCase().includes(value.toLowerCase())
         );
@@ -506,9 +506,19 @@ function AdminStoreEditPageContent({ params }: PageProps) {
 
   // メッセージ送信履歴を取得
   const fetchMessageHistory = async (storeId: string) => {
-    console.log('Skipping message history fetch in admin mode');
-    // 管理者モードではメッセージ履歴は取得しない
-    return;
+    try {
+      const response = await fetch(`/api/admin/broadcast-message?storeId=${storeId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setMessageHistory(data.messages || []);
+      } else {
+        console.error('Failed to fetch message history:', response.statusText);
+        setMessageHistory([]);
+      }
+    } catch (error) {
+      console.error('Error fetching message history:', error);
+      setMessageHistory([]);
+    }
   };
 
   // メッセージを取り消し
@@ -524,15 +534,13 @@ function AdminStoreEditPageContent({ params }: PageProps) {
     }
 
     try {
-      const response = await fetch('/api/owner/cancel-message', {
+      const response = await fetch('/api/admin/cancel-message', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           broadcastId,
-          storeId: store.id,
-          token: '', // 管理者モードではトークンは不要
           reason: reason || undefined
         }),
       });
@@ -579,14 +587,13 @@ function AdminStoreEditPageContent({ params }: PageProps) {
 
     setIsSendingMessage(true);
     try {
-      const response = await fetch('/api/owner/send-message', {
+      const response = await fetch('/api/admin/broadcast-message', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           storeId: store?.id,
-          token: '', // 管理者モードではトークンは不要
           title: messageTitle,
           content: messageContent,
           messageType
@@ -927,20 +934,16 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                         <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-80 overflow-y-auto">
                           {stationSuggestions.map(station => (
                             <div key={station.id} className="border-b border-gray-100 last:border-b-0">
-                              <div className="px-3 py-2 font-medium text-gray-800 bg-gray-50">
-                                {station.name}駅
-                              </div>
                               {station.railway_lines.length > 1 ? (
-                                <div className="px-3 pb-2">
-                                  <div className="text-xs text-gray-500 mb-1 pt-1">路線を選択してください：</div>
+                                <div className="px-3 py-2">
                                   {station.railway_lines.map((line) => (
                                     <button
                                       key={`${station.id}-${line}`}
                                       type="button"
                                       onClick={() => handleStationSelect(station, line)}
-                                      className="w-full text-left px-2 py-1 ml-2 text-sm hover:bg-indigo-50 cursor-pointer rounded border-l-2 border-indigo-200 mb-1"
+                                      className="w-full text-left px-2 py-1 text-sm hover:bg-gray-100 cursor-pointer mb-1"
                                     >
-                                      {line}線 {station.name}駅
+                                      {line} {station.name}
                                     </button>
                                   ))}
                                 </div>
@@ -948,9 +951,9 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                                 <button
                                   type="button"
                                   onClick={() => handleStationSelect(station)}
-                                  className="w-full text-left px-3 py-1 text-sm hover:bg-gray-100 cursor-pointer"
+                                  className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 cursor-pointer"
                                 >
-                                  {station.railway_lines[0] || ''}線 {station.name}駅
+                                  {station.railway_lines[0] || ''} {station.name}
                                 </button>
                               )}
                             </div>
@@ -1256,20 +1259,16 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                       <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-80 overflow-y-auto">
                         {stationSuggestions.map(station => (
                           <div key={station.id} className="border-b border-gray-100 last:border-b-0">
-                            <div className="px-3 py-2 font-medium text-gray-800 bg-gray-50">
-                              {station.name}駅
-                            </div>
                             {station.railway_lines.length > 1 ? (
-                              <div className="px-3 pb-2">
-                                <div className="text-xs text-gray-500 mb-1 pt-1">路線を選択してください：</div>
+                              <div className="px-3 py-2">
                                 {station.railway_lines.map((line) => (
                                   <button
                                     key={`${station.id}-${line}`}
                                     type="button"
                                     onClick={() => handleStationSelect(station, line)}
-                                    className="w-full text-left px-2 py-1 ml-2 text-sm hover:bg-indigo-50 cursor-pointer rounded border-l-2 border-indigo-200 mb-1"
+                                    className="w-full text-left px-2 py-1 text-sm hover:bg-gray-100 cursor-pointer mb-1"
                                   >
-                                    {line}線 {station.name}駅
+                                    {line} {station.name}
                                   </button>
                                 ))}
                               </div>
@@ -1277,9 +1276,9 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                               <button
                                 type="button"
                                 onClick={() => handleStationSelect(station)}
-                                className="w-full text-left px-3 py-1 text-sm hover:bg-gray-100 cursor-pointer"
+                                className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 cursor-pointer"
                               >
-                                {station.railway_lines[0] || ''}線 {station.name}駅
+                                {station.railway_lines[0] || ''} {station.name}
                               </button>
                             )}
                           </div>
@@ -2119,6 +2118,7 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                                 {/* 取り消しボタン */}
                                 {canCancel && (
                                   <button
+                                    type="button"
                                     onClick={() => handleCancelMessage(msg.broadcast_id, msg.title)}
                                     className="mt-2 px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
                                   >

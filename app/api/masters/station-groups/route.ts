@@ -30,14 +30,25 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('Error fetching station groups:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({
+        error: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      }, { status: 500 });
     }
 
     return NextResponse.json({ data: data || [] });
   } catch (error) {
     console.error('Error:', error);
+    const errorMessage = error instanceof Error ? error.message : '予期しないエラーが発生しました';
+    const errorStack = error instanceof Error ? error.stack : undefined;
     return NextResponse.json(
-      { message: '予期しないエラーが発生しました' },
+      {
+        message: '予期しないエラーが発生しました',
+        error: errorMessage,
+        stack: process.env.NODE_ENV === 'development' ? errorStack : undefined
+      },
       { status: 500 }
     );
   }

@@ -21,6 +21,11 @@ export async function POST(request: NextRequest) {
 
     // デバッグログ
     console.log('Login attempt:', { loginId, ip });
+    console.log('Environment check:', {
+      hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      hasServiceRoleKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 30) + '...'
+    });
 
     // Service Roleクライアントが利用可能か確認
     if (!supabaseAdmin) {
@@ -32,13 +37,29 @@ export async function POST(request: NextRequest) {
     }
 
     // ユーザー情報を取得
+    console.log('Querying user from database...');
     const { data: user, error: fetchError } = await supabaseAdmin
       .from('admin_auth_users')
       .select('*')
       .eq('login_id', loginId)
       .single();
 
-    if (fetchError || !user) {
+    if (fetchError) {
+      console.error('Database query error:', {
+        message: fetchError.message,
+        details: fetchError.details,
+        hint: fetchError.hint,
+        code: fetchError.code
+      });
+      return NextResponse.json(
+        {
+          message: 'ログインIDまたはパスワードが正しくありません'
+        },
+        { status: 401 }
+      );
+    }
+
+    if (!user) {
       console.log('User not found:', loginId);
       return NextResponse.json(
         {
@@ -47,6 +68,14 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       );
     }
+
+    console.log('User found:', {
+      id: user.id,
+      loginId: user.login_id,
+      isActive: user.is_active,
+      role: user.role,
+      passwordHashLength: user.password_hash?.length
+    });
 
     // アカウントが無効化されている場合
     if (!user.is_active) {
@@ -73,7 +102,9 @@ export async function POST(request: NextRequest) {
     }
 
     // パスワード検証
+    console.log('Validating password...');
     const passwordValid = await bcrypt.compare(password, user.password_hash);
+    console.log('Password validation result:', { passwordValid });
 
     if (!passwordValid) {
       const newFailedAttempts = (user.failed_attempts || 0) + 1;
@@ -106,6 +137,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 認証成功：失敗回数をリセット、最終ログイン時刻を更新
+    console.log('Authentication successful, updating user record...');
     await supabaseAdmin
       .from('admin_auth_users')
       .update({
@@ -116,6 +148,7 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id);
 
     // セッション作成
+    console.log('Creating session...');
     await createSession({
       userId: user.id,
       loginId: user.login_id,
@@ -125,6 +158,7 @@ export async function POST(request: NextRequest) {
       assignedStoreId: user.assigned_store_id
     });
 
+    console.log('Login successful for user:', user.login_id);
     return NextResponse.json(
       {
         success: true,

@@ -202,14 +202,29 @@ export async function POST(request: NextRequest) {
 
     // セッション作成
     console.log('Creating session...');
-    await createSession({
+    const sessionData: {
+      userId: string;
+      loginId: string;
+      displayName: string;
+      role: string;
+      permissions: string[];
+      assignedStoreId?: string;
+      allowedUrl?: string;
+    } = {
       userId: user.id,
       loginId: user.login_id,
       displayName: user.display_name,
       role: user.role,
       permissions: user.permissions || [],
       assignedStoreId: user.assigned_store_id
-    });
+    };
+
+    // store_ownerの場合、許可されたURLを設定
+    if (user.role === 'store_owner' && user.assigned_store_id) {
+      sessionData.allowedUrl = `/admin/stores/${user.assigned_store_id}/edit`;
+    }
+
+    await createSession(sessionData);
 
     console.log('Login successful for user:', user.login_id);
     return NextResponse.json(

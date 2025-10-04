@@ -1,4 +1,26 @@
+'use client';
+
+import { useSearchParams, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+
 export default function UnauthorizedPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [returnUrl, setReturnUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const returnParam = searchParams.get('return');
+    setReturnUrl(returnParam);
+  }, [searchParams]);
+
+  const handleReturn = () => {
+    if (returnUrl) {
+      router.push(returnUrl);
+    } else {
+      router.push('/admin/login');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
       <div className="max-w-md w-full text-center">
@@ -28,9 +50,16 @@ export default function UnauthorizedPage() {
           <p className="text-gray-700 mb-4">
             このページへのアクセス権限がありません。
           </p>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 mb-6">
             許可されたページのみアクセス可能です。
           </p>
+
+          <button
+            onClick={handleReturn}
+            className="w-full px-6 py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors font-medium"
+          >
+            {returnUrl ? '元のページに戻る' : 'ログインページへ'}
+          </button>
         </div>
 
         <div className="text-sm text-gray-400">

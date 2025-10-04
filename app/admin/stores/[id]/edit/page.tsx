@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
+import { setAllowedUrl, getAllowedUrl, fetchWithAuth } from '@/lib/fetch-with-auth';
 
 
 interface Store {
@@ -239,6 +240,12 @@ function AdminStoreEditPageContent({ params }: PageProps) {
 
       // ロールを設定
       setUserRole(sessionData.role || '');
+
+      // store_ownerの場合、sessionStorageに許可URLを保存
+      if (sessionData.role === 'store_owner' && sessionData.allowedUrl) {
+        setAllowedUrl(sessionData.allowedUrl);
+        console.log('[StoreEdit] Allowed URL saved:', sessionData.allowedUrl);
+      }
 
       setIsAuthenticated(true);
       setIsValidToken(true);
@@ -785,6 +792,23 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                     className="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
                   >
                     一覧に戻る
+                  </button>
+                )}
+                {/* store_ownerロールの場合はログアウトボタンを表示 */}
+                {isStoreOwner && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        await fetch('/api/auth/logout', { method: 'POST' });
+                        router.push('/admin/login');
+                      } catch (error) {
+                        console.error('Logout error:', error);
+                      }
+                    }}
+                    className="px-4 py-2 text-sm bg-red-100 text-red-700 rounded-md hover:bg-red-200"
+                  >
+                    ログアウト
                   </button>
                 )}
                 {/* 更新ボタンを上部に配置 */}

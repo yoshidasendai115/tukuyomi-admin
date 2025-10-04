@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { SessionData } from '@/lib/auth';
 
+// Note: このページはMiddlewareでstore_ownerのアクセスをブロック済み
+
 interface DashboardStats {
   pendingRequests: number;
   approvedRequests: number;

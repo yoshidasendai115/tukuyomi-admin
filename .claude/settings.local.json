@@ -5,7 +5,6 @@
       "Bash(awk:*)",
       "Bash(export PGPASSWORD=postgres)",
       "Bash(cat:*)",
-      "Read(//Users/yoshidaseiichi/yoshidasendai/tukuyomi/tukuyomi-web/supabase/migrations/**)",
       "Bash(for table in admin_users broadcast_messages broadcast_recipients favorites message_cancellations message_templates user_messages users)",
       "Bash(do echo \"=== $table ===\" grep -A 30 \"CREATE TABLE.*\"\"$table\"\"\" /Users/yoshidaseiichi/yoshidasendai/tukuyomi/tukuyomi-web/supabase/migrations/00000000000000_initial_schema.sql)",
       "Read(//private/tmp/**)",
@@ -13,9 +12,27 @@
       "Bash(psql:*)",
       "Bash(curl \"http://127.0.0.1:54321/storage/v1/object/public/admin-documents/store-applications/2025-10-03T03-10-34-747Z-kgfblwe8gp.png\")",
       "Bash(supabase migration:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Read(//Users/yoshidaseiichi/.claude/**)",
+      "Read(//Users/yoshidaseiichi/.config/claude/**)",
+      "Read(//Users/yoshidaseiichi/yoshidasendai/tukuyomi/**)",
+      "Bash(npx:*)",
+      "Bash(rm:*)",
+      "Bash(npm search:*)",
+      "Bash(lsof:*)",
+      "Bash(xargs kill:*)",
+      "Bash(npm run dev:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfix: 店舗管理機能とブロードキャストメッセージ機能の修正\n\n- 店舗一覧: areaカラムをstationカラムに修正\n- 店舗編集: 駅名サジェスト機能の改善\n  - マスターデータAPIにstationsとrailwayLinesを追加\n  - サジェスト表示を1行に統一（路線名 駅名）\n  - 「駅」「線」の二重表示を修正\n  - undefinedエラーの防止（配列存在チェック追加）\n- ブロードキャストメッセージ: 新規API追加\n  - POST /api/admin/broadcast-message: メッセージ送信履歴取得\n  - POST /api/admin/cancel-message: メッセージ取り消し\nEOF\n)\")",
+      "Bash(git push:*)",
+      "Bash(git log:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: プラン別優先表示システムの実装\n\n- ダッシュボード: Free/Standard/Premium別の店舗数を表示\n- プラン設定: is_recommendedチェックボックス削除、priority_scoreで自動判定\n- プランカード: ラジオボタンで選択状態を視覚化\n- タブ名: 「優先表示設定」→「プラン設定」に変更\n- テーブルヘッダー: 「優先表示」→「プラン」に変更\n- APIルート: is_recommendedフィールド参照を削除\n- マイグレーション: priority_scoreを3段階(0/3/5)に変更、is_recommendedカラム削除\nEOF\n)\")",
+      "Bash(git commit:*)"
     ],
     "deny": [],
-    "ask": []
+    "ask": [],
+    "additionalDirectories": [
+      "/Users/yoshidaseiichi/yoshidasendai/tukuyomi/tukuyomi-web"
+    ]
   }
 }

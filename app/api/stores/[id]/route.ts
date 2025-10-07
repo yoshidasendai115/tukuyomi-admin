@@ -109,6 +109,17 @@ export async function PATCH(
       'recommendation_reason',
       'recommended_at',
       'recommended_by',
+      // 立地・アクセスフィールド
+      'station',
+      'station_line',
+      'station_distance',
+      'station_id',
+      // 店舗情報フィールド
+      'seating_capacity',
+      'payment_methods',
+      // 位置情報フィールド
+      'latitude',
+      'longitude',
       // 詳細営業時間フィールド
       'hours_monday_open',
       'hours_monday_close',
@@ -187,6 +198,51 @@ export async function PATCH(
 
     if (hasHoursUpdate) {
       updateData.business_hours = generateBusinessHours();
+    }
+
+    // 駅名が更新された場合、stationsマスターから駅IDを自動設定
+    if ('station' in updateData && updateData.station) {
+      const stationName = updateData.station;
+      // 「大森駅」→「大森」のように「駅」を除去して検索
+      const cleanedName = stationName.replace(/駅$/, '');
+
+      // stationsマスターテーブルで駅名検索（完全一致または部分一致）
+      const { data: stationData, error: stationError } = await supabaseAdmin
+        .from('stations')
+        .select('id, name')
+        .or(`name.eq.${cleanedName},name.eq.${stationName}`)
+        .limit(1)
+        .single();
+
+      if (!stationError && stationData) {
+        console.log(`[Store Update] Found station: ${stationData.name} (${stationData.id})`);
+        updateData.station_id = stationData.id;
+      } else {
+        console.log(`[Store Update] Station not found in master: ${stationName}`);
+        // 駅が見つからない場合はstation_idをNULLに設定
+        updateData.station_id = null;
+      }
+    }
+
+    // 住所が更新された場合、Geocoding APIで緯度経度を自動取得
+    if ('address' in updateData && updateData.address) {
+      try {
+        const geocodeUrl = new URL('/api/maps/geocode', request.url);
+        geocodeUrl.searchParams.set('address', updateData.address);
+
+        const geocodeResponse = await fetch(geocodeUrl.toString());
+        if (geocodeResponse.ok) {
+          const geocodeData = await geocodeResponse.json();
+          console.log(`[Store Update] Geocoded address: ${geocodeData.formatted_address} (${geocodeData.lat}, ${geocodeData.lng})`);
+          updateData.latitude = geocodeData.lat;
+          updateData.longitude = geocodeData.lng;
+        } else {
+          console.log(`[Store Update] Geocoding failed for address: ${updateData.address}`);
+        }
+      } catch (error) {
+        console.error('[Store Update] Geocoding error:', error);
+        // エラー時も保存処理は継続
+      }
     }
 
     // 更新日時を追加

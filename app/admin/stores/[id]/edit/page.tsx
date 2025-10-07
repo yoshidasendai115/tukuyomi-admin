@@ -889,20 +889,6 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                       </select>
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        キャッチコピー
-                      </label>
-                      <input
-                        type="text"
-                        name="catch_copy"
-                        value={formData.catch_copy || ''}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="例: 本格的な江戸前寿司をカジュアルに"
-                      />
-                    </div>
-
                     <div className="lg:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         店舗説明

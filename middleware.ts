@@ -5,6 +5,9 @@ import { verifySession } from '@/lib/auth';
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // デバッグ：全リクエストをログ出力
+  console.log('[Middleware] START:', pathname);
+
   // 公開ページ（認証不要）
   const publicPaths = [
     '/admin/login',
@@ -17,11 +20,13 @@ export async function middleware(request: NextRequest) {
 
   // 公開ページへのアクセスは許可
   if (publicPaths.some(path => pathname.startsWith(path))) {
+    console.log('[Middleware] Public path, skipping auth:', pathname);
     return NextResponse.next();
   }
 
   // 管理画面へのアクセスは認証が必要
   if (pathname.startsWith('/admin')) {
+    console.log('[Middleware] Admin path detected, verifying session:', pathname);
     const session = await verifySession(request);
 
     // デバッグ：すべてのリクエストでセッション情報をログ出力
@@ -172,9 +177,10 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * 全てのパスにマッチ（静的ファイル以外）
-     * トークンモードチェックを最優先で行うため
+     * 管理画面のパスに明示的にマッチ
+     * 静的ファイルとAPI routes、画像を除外
      */
-    '/((?!_next/static|_next/image).*)',
+    '/admin/:path*',
+    '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 };

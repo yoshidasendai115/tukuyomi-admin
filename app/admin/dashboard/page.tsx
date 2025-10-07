@@ -74,6 +74,16 @@ export default function AdminDashboardPage() {
       }
 
       const sessionData = await response.json();
+
+      // store_ownerはダッシュボードにアクセスできない
+      if (sessionData.role === 'store_owner' && !isRedirecting) {
+        console.log('[Dashboard] Blocking store_owner access');
+        setIsRedirecting(true);
+        const allowedUrl = sessionData.allowedUrl || `/admin/stores/${sessionData.assignedStoreId}/edit`;
+        router.push(allowedUrl);
+        return;
+      }
+
       setSession(sessionData);
     } catch (error) {
       // ネットワークエラーまたはタイムアウト

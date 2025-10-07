@@ -15,6 +15,7 @@ interface DashboardStats {
   freeStores: number;
   standardStores: number;
   premiumStores: number;
+  pendingReviewReports: number;
 }
 
 export default function AdminDashboardPage() {
@@ -25,7 +26,8 @@ export default function AdminDashboardPage() {
     totalStores: 0,
     freeStores: 0,
     standardStores: 0,
-    premiumStores: 0
+    premiumStores: 0,
+    pendingReviewReports: 0
   });
   const [session, setSession] = useState<SessionData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -122,13 +124,20 @@ export default function AdminDashboardPage() {
         .select('id', { count: 'exact' })
         .eq('priority_score', 5);
 
+      // 口コミ通報の未対応件数
+      const { data: reviewReportsData } = await supabase
+        .from('review_reports')
+        .select('id', { count: 'exact' })
+        .eq('status', 'pending');
+
       setStats({
         pendingRequests: pendingData?.length || 0,
         approvedRequests: approvedData?.length || 0,
         totalStores: storeData?.length || 0,
         freeStores: freeData?.length || 0,
         standardStores: standardData?.length || 0,
-        premiumStores: premiumData?.length || 0
+        premiumStores: premiumData?.length || 0,
+        pendingReviewReports: reviewReportsData?.length || 0
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -207,7 +216,7 @@ export default function AdminDashboardPage() {
       {/* メインコンテンツ */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* 統計カード */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center">
               <div className="p-3 bg-yellow-100 rounded-lg">
@@ -218,6 +227,20 @@ export default function AdminDashboardPage() {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">未処理申請</p>
                 <p className="text-2xl font-bold text-gray-900">{stats.pendingRequests}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="p-3 bg-red-100 rounded-lg">
+                <svg className="h-8 w-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-500">未対応通報</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.pendingReviewReports}</p>
               </div>
             </div>
           </div>
@@ -303,6 +326,19 @@ export default function AdminDashboardPage() {
               <h3 className="text-lg font-semibold text-gray-900 mb-2">申請管理</h3>
               <p className="text-sm text-gray-600">
                 店舗編集アカウント申請の確認・承認・却下を行います
+              </p>
+              <div className="mt-4">
+                <span className="text-indigo-600 text-sm font-medium">管理画面へ →</span>
+              </div>
+            </Link>
+
+            <Link
+              href="/admin/review-reports"
+              className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow"
+            >
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">口コミ通報管理</h3>
+              <p className="text-sm text-gray-600">
+                ユーザーから報告された口コミを確認・処理します
               </p>
               <div className="mt-4">
                 <span className="text-indigo-600 text-sm font-medium">管理画面へ →</span>

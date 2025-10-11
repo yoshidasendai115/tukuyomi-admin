@@ -283,6 +283,42 @@ export async function POST(request: NextRequest) {
         user_agent: request.headers.get('user-agent') || undefined
       });
 
+    // 新規ユーザーの場合のみメール送信（既存ユーザーの場合はスキップ）
+    if (plainPassword !== '[既存アカウント - パスワードは変更されていません]') {
+      try {
+        const loginUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
+
+        const emailResponse = await fetch(new URL('/api/emails/send', request.url).toString(), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            type: 'store_approval',
+            to: requestData.applicant_email,
+            data: {
+              storeName: requestData.store_name,
+              storeAddress: requestData.store_address,
+              loginId: requestData.applicant_email,
+              temporaryPassword: plainPassword,
+              loginUrl: `${loginUrl}/admin/login`,
+            },
+          }),
+        });
+
+        if (!emailResponse.ok) {
+          const errorData = await emailResponse.json();
+          console.error('[Approve] Failed to send approval email:', errorData);
+          // メール送信失敗は承認処理自体を失敗させない
+        } else {
+          console.log('[Approve] Approval email sent successfully');
+        }
+      } catch (emailError) {
+        console.error('[Approve] Error sending email:', emailError);
+        // メール送信失敗は承認処理自体を失敗させない
+      }
+    }
+
     return NextResponse.json({
       success: true,
       message: '申請を承認しました',

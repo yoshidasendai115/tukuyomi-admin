@@ -3,9 +3,9 @@ const fs = require('fs').promises;
 const path = require('path');
 require('dotenv').config({ path: '.env.production' });
 
-// リモート（本番環境）のSupabase設定
-const REMOTE_URL = 'https://okntsiwxrgwabsemuxsq.supabase.co';
-const REMOTE_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9rbnRzaXd4cmd3YWJzZW11eHNxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0OTI1NjE0MiwiZXhwIjoyMDY0ODMyMTQyfQ.GlBkewtZ6F4HRApitc9_oNiWexBL6oHqLnFxdgM1T2Q';
+// リモート（本番環境）のSupabase設定 - garunaviプロジェクト
+const REMOTE_URL = 'https://aexizormxwwoyermbhfr.supabase.co';
+const REMOTE_SERVICE_ROLE_KEY = 'YOUR_NEW_SERVICE_ROLE_KEY_HERE'; // TODO: garunaviプロジェクトのservice_roleキーに置き換える
 
 // クライアントの初期化
 const supabase = createClient(REMOTE_URL, REMOTE_SERVICE_ROLE_KEY);
@@ -97,7 +97,7 @@ async function applyMigration() {
         console.log(`📝 Please execute the following migration file manually in Supabase Dashboard:`);
         console.log(`   ${migrationPath}`);
         console.log(`\n📌 Steps:`);
-        console.log(`   1. Go to https://supabase.com/dashboard/project/okntsiwxrgwabsemuxsq/sql/new`);
+        console.log(`   1. Go to https://supabase.com/dashboard/project/aexizormxwwoyermbhfr/sql/new`);
         console.log(`   2. Copy and paste the contents of the migration file`);
         console.log(`   3. Click "Run" to execute the migration`);
 

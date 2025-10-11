@@ -18,22 +18,27 @@ export interface SessionData {
 }
 
 export async function createSession(data: SessionData) {
-  const token = await new SignJWT(data)
-    .setProtectedHeader({ alg: 'HS256' })
-    .setExpirationTime('24h')
-    .setIssuedAt()
-    .sign(secret);
+  try {
+    const token = await new SignJWT(data)
+      .setProtectedHeader({ alg: 'HS256' })
+      .setExpirationTime('24h')
+      .setIssuedAt()
+      .sign(secret);
 
-  const cookieStore = await cookies();
-  cookieStore.set('admin_session', token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 60 * 60 * 24, // 24 hours
-    path: '/',
-  });
+    const cookieStore = await cookies();
+    cookieStore.set('admin_session', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24, // 24 hours
+      path: '/',
+    });
 
-  return token;
+    return token;
+  } catch (error) {
+    console.error('Failed to create session:', error);
+    throw error;
+  }
 }
 
 export async function getSession(): Promise<SessionData | null> {

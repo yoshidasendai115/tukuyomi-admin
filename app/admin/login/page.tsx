@@ -162,10 +162,16 @@ export default function AdminLoginPage() {
             </button>
           </form>
 
-          <div className="mt-6 text-center">
+          <div className="mt-6 text-center space-y-2">
+            <Link
+              href="/admin/forgot-password"
+              className="block text-sm text-indigo-600 hover:text-indigo-500"
+            >
+              パスワードをお忘れですか？
+            </Link>
             <Link
               href="/"
-              className="text-sm text-indigo-600 hover:text-indigo-500"
+              className="block text-sm text-gray-500 hover:text-gray-700"
             >
               トップページへ戻る
             </Link>

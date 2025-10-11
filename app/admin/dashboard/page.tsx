@@ -212,6 +212,12 @@ export default function AdminDashboardPage() {
                 <p className="text-sm text-gray-600">{session?.loginId} ({session?.displayName})</p>
                 <p className="text-xs text-gray-500">{session?.role}</p>
               </div>
+              <Link
+                href="/admin/settings/password"
+                className="px-4 py-2 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+              >
+                パスワード変更
+              </Link>
               <button
                 onClick={handleLogout}
                 className="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"

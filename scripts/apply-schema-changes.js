@@ -1,8 +1,8 @@
 const { createClient } = require('@supabase/supabase-js');
 
-// リモート（本番環境）のSupabase設定
-const REMOTE_URL = 'https://okntsiwxrgwabsemuxsq.supabase.co';
-const REMOTE_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9rbnRzaXd4cmd3YWJzZW11eHNxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0OTI1NjE0MiwiZXhwIjoyMDY0ODMyMTQyfQ.GlBkewtZ6F4HRApitc9_oNiWexBL6oHqLnFxdgM1T2Q';
+// リモート（本番環境）のSupabase設定 - garunaviプロジェクト
+const REMOTE_URL = 'https://aexizormxwwoyermbhfr.supabase.co';
+const REMOTE_SERVICE_ROLE_KEY = 'YOUR_NEW_SERVICE_ROLE_KEY_HERE'; // TODO: garunaviプロジェクトのservice_roleキーに置き換える
 
 const remoteSupabase = createClient(REMOTE_URL, REMOTE_SERVICE_ROLE_KEY);
 

@@ -6,10 +6,11 @@
 ## 前提条件
 
 ### 必要な情報
-- **プロジェクトRef**: `okntsiwxrgwabsemuxsq`
+- **プロジェクト名**: `garunavi`
+- **プロジェクトRef**: `aexizormxwwoyermbhfr`
 - **データベースホスト**: `aws-0-ap-northeast-1.pooler.supabase.com`
 - **ポート**: `6543`
-- **ユーザー名**: `postgres.okntsiwxrgwabsemuxsq`
+- **ユーザー名**: `postgres.aexizormxwwoyermbhfr`
 - **データベース名**: `postgres`
 - **パスワード**: Supabase Dashboard > Settings > Database で確認
 
@@ -27,7 +28,7 @@
 PGPASSWORD="[YOUR-DB-PASSWORD]" psql \
   -h aws-0-ap-northeast-1.pooler.supabase.com \
   -p 6543 \
-  -U postgres.okntsiwxrgwabsemuxsq \
+  -U postgres.aexizormxwwoyermbhfr \
   -d postgres \
   -f [SQLファイルパス]
 ```
@@ -35,26 +36,26 @@ PGPASSWORD="[YOUR-DB-PASSWORD]" psql \
 #### 実際の使用例
 ```bash
 # Part 0 - storesテーブルの制約調整
-PGPASSWORD="6ptWpN0sMFRnFfwB" psql \
+PGPASSWORD="[YOUR-DB-PASSWORD]" psql \
   -h aws-0-ap-northeast-1.pooler.supabase.com \
   -p 6543 \
-  -U postgres.okntsiwxrgwabsemuxsq \
+  -U postgres.aexizormxwwoyermbhfr \
   -d postgres \
   -f supabase/migrations/remote_migration_part0_missing_columns.sql
 
 # Part 2 - 基本テーブルの作成
-PGPASSWORD="6ptWpN0sMFRnFfwB" psql \
+PGPASSWORD="[YOUR-DB-PASSWORD]" psql \
   -h aws-0-ap-northeast-1.pooler.supabase.com \
   -p 6543 \
-  -U postgres.okntsiwxrgwabsemuxsq \
+  -U postgres.aexizormxwwoyermbhfr \
   -d postgres \
   -f supabase/migrations/remote_migration_part2_auth_aware.sql
 
 # Part 3 - 関連テーブルの作成
-env PGPASSWORD="6ptWpN0sMFRnFfwB" psql \
+env PGPASSWORD="[YOUR-DB-PASSWORD]" psql \
   -h aws-0-ap-northeast-1.pooler.supabase.com \
   -p 6543 \
-  -U postgres.okntsiwxrgwabsemuxsq \
+  -U postgres.aexizormxwwoyermbhfr \
   -d postgres \
   -f supabase/migrations/remote_migration_part3_relations.sql
 ```
@@ -63,12 +64,12 @@ env PGPASSWORD="6ptWpN0sMFRnFfwB" psql \
 
 ```bash
 # 環境変数を設定
-export PGPASSWORD='6ptWpN0sMFRnFfwB'
+export PGPASSWORD='[YOUR-DB-PASSWORD]'
 
 # SQLファイルを実行
 psql -h aws-0-ap-northeast-1.pooler.supabase.com \
   -p 6543 \
-  -U postgres.okntsiwxrgwabsemuxsq \
+  -U postgres.aexizormxwwoyermbhfr \
   -d postgres \
   -f [SQLファイルパス]
 ```
@@ -76,10 +77,10 @@ psql -h aws-0-ap-northeast-1.pooler.supabase.com \
 ### 3. envコマンドを使用した方法（推奨）
 
 ```bash
-env PGPASSWORD="6ptWpN0sMFRnFfwB" psql \
+env PGPASSWORD="[YOUR-DB-PASSWORD]" psql \
   -h aws-0-ap-northeast-1.pooler.supabase.com \
   -p 6543 \
-  -U postgres.okntsiwxrgwabsemuxsq \
+  -U postgres.aexizormxwwoyermbhfr \
   -d postgres \
   -f [SQLファイルパス]
 ```
@@ -112,7 +113,7 @@ env PGPASSWORD="6ptWpN0sMFRnFfwB" psql \
 // scripts/check-new-tables.js
 const { createClient } = require('@supabase/supabase-js');
 
-const REMOTE_URL = 'https://okntsiwxrgwabsemuxsq.supabase.co';
+const REMOTE_URL = 'https://aexizormxwwoyermbhfr.supabase.co';
 const REMOTE_ANON_KEY = '[YOUR-ANON-KEY]';
 
 const remoteSupabase = createClient(REMOTE_URL, REMOTE_ANON_KEY);
@@ -164,7 +165,7 @@ node scripts/check-new-tables.js
 
 #### Supabase Dashboard SQLエディタ
 最も簡単で確実な方法：
-1. https://supabase.com/dashboard/project/okntsiwxrgwabsemuxsq/sql/new
+1. https://supabase.com/dashboard/project/aexizormxwwoyermbhfr/sql/new
 2. SQLファイルの内容をコピー＆ペースト
 3. 「Run」ボタンをクリック
 
@@ -183,7 +184,7 @@ PGPASSWORD=$(cat .env.production | grep DB_PASSWORD | cut -d'=' -f2) psql ...
 # または、対話的にパスワードを入力
 psql -h aws-0-ap-northeast-1.pooler.supabase.com \
   -p 6543 \
-  -U postgres.okntsiwxrgwabsemuxsq \
+  -U postgres.aexizormxwwoyermbhfr \
   -d postgres \
   -W \
   -f [SQLファイルパス]

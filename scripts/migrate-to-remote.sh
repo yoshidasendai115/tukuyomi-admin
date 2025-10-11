@@ -11,10 +11,10 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# データベース接続情報
+# データベース接続情報 - garunaviプロジェクト
 DB_HOST="aws-0-ap-northeast-1.pooler.supabase.com"
 DB_PORT="6543"
-DB_USER="postgres.okntsiwxrgwabsemuxsq"
+DB_USER="postgres.aexizormxwwoyermbhfr"
 DB_NAME="postgres"
 
 # パスワードの取得（引数またはプロンプト）

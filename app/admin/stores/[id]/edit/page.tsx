@@ -2175,13 +2175,13 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                     <label className="block text-sm font-medium text-gray-700 mb-3">
                       優先表示プラン
                     </label>
-                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
                       {/* Freeプラン */}
                       <div
                         className={`border-2 rounded-lg p-4 cursor-pointer transition-all relative ${
                           formData.priority_score === 0
                             ? 'border-blue-500 bg-blue-50 shadow-md'
-                            : 'border-gray-300 hover:border-blue-300 hover:shadow-sm'
+                            : 'border-gray-300 bg-white hover:border-blue-300 hover:bg-gray-50 hover:shadow-sm'
                         }`}
                         onClick={() => setFormData(prev => ({ ...prev, priority_score: 0 }))}
                       >
@@ -2204,7 +2204,7 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                         className={`border-2 rounded-lg p-4 cursor-pointer transition-all relative ${
                           formData.priority_score === 2
                             ? 'border-amber-600 bg-amber-50 shadow-md'
-                            : 'border-gray-300 hover:border-amber-400 hover:shadow-sm'
+                            : 'border-gray-300 bg-white hover:border-amber-400 hover:bg-amber-50/30 hover:shadow-sm'
                         }`}
                         onClick={() => setFormData(prev => ({ ...prev, priority_score: 2 }))}
                       >
@@ -2229,7 +2229,7 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                         className={`border-2 rounded-lg p-4 cursor-pointer transition-all relative ${
                           formData.priority_score === 3
                             ? 'border-gray-500 bg-gray-100 shadow-md'
-                            : 'border-gray-300 hover:border-gray-400 hover:shadow-sm'
+                            : 'border-gray-300 bg-white hover:border-gray-400 hover:bg-gray-50 hover:shadow-sm'
                         }`}
                         onClick={() => setFormData(prev => ({ ...prev, priority_score: 3 }))}
                       >
@@ -2254,7 +2254,7 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                         className={`border-2 rounded-lg p-4 cursor-pointer transition-all relative ${
                           formData.priority_score === 4
                             ? 'border-cyan-500 bg-cyan-50 shadow-md'
-                            : 'border-gray-300 hover:border-cyan-400 hover:shadow-sm'
+                            : 'border-gray-300 bg-white hover:border-cyan-400 hover:bg-cyan-50/30 hover:shadow-sm'
                         }`}
                         onClick={() => setFormData(prev => ({ ...prev, priority_score: 4 }))}
                       >
@@ -2279,7 +2279,7 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                         className={`border-2 rounded-lg p-4 cursor-pointer transition-all relative ${
                           formData.priority_score === 5
                             ? 'border-yellow-500 bg-yellow-50 shadow-md'
-                            : 'border-gray-300 hover:border-yellow-400 hover:shadow-sm'
+                            : 'border-gray-300 bg-white hover:border-yellow-400 hover:bg-yellow-50/30 hover:shadow-sm'
                         }`}
                         onClick={() => setFormData(prev => ({ ...prev, priority_score: 5 }))}
                       >

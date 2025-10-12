@@ -63,7 +63,11 @@
       "Bash(PGPASSWORD='3naXUAFqlCluotGn' psql:*)",
       "Bash(PGPASSWORD='3naXUAFqlCluotGn' psql -h aws-1-ap-northeast-1.pooler.supabase.com -p 6543 -U postgres.aexizormxwwoyermbhfr -d postgres -c \"UPDATE admin_auth_users SET password_hash = ''$2b$10$1CPJpxdfoH.brv0fuBrf9ekMGpM9Fjefk2Em0ubhhx0aEt5vwhAPm'', failed_attempts = 0, locked_until = NULL WHERE login_id = ''ys-yoshida'';\")",
       "WebSearch",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(git checkout:*)",
+      "Bash(git config:*)",
+      "Bash(chmod:*)",
+      "Bash(exit 0)"
     ],
     "deny": [],
     "ask": [],

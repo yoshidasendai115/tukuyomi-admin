@@ -88,6 +88,8 @@ export default function AdminRequestsPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [genres, setGenres] = useState<Genre[]>([]);
+  const [showEmailPreviewModal, setShowEmailPreviewModal] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
 
   useEffect(() => {
     fetchRequests();
@@ -428,6 +430,48 @@ export default function AdminRequestsPage() {
     } catch (error) {
       console.error('Error updating verification:', error);
       alert('エラーが発生しました');
+    }
+  };
+
+  const handleSendCredentialsEmail = async () => {
+    if (!selectedRequest) return;
+
+    setIsSendingEmail(true);
+
+    try {
+      const loginUrl = `${window.location.origin}/admin/login`;
+
+      const response = await fetch('/api/emails/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'store_approval',
+          to: selectedRequest.applicant_email,
+          data: {
+            storeName: selectedRequest.store_name,
+            storeAddress: selectedRequest.store_address,
+            loginId: selectedRequest.applicant_email,
+            temporaryPassword: selectedRequest.generated_password,
+            loginUrl,
+          },
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'メール送信に失敗しました');
+      }
+
+      alert('ログイン情報をメールで送信しました');
+      setShowEmailPreviewModal(false);
+    } catch (error) {
+      console.error('Error sending email:', error);
+      alert('メール送信中にエラーが発生しました');
+    } finally {
+      setIsSendingEmail(false);
     }
   };
 
@@ -953,6 +997,19 @@ export default function AdminRequestsPage() {
                       </div>
                     </div>
 
+                    {/* メール送信ボタン */}
+                    <div className="mt-4">
+                      <button
+                        onClick={() => setShowEmailPreviewModal(true)}
+                        className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center justify-center"
+                      >
+                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        店舗ユーザーに送信
+                      </button>
+                    </div>
+
                     <h3 className="text-lg font-semibold mb-3 mt-6">承認済みアクション</h3>
                     <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
                       <div className="flex">
@@ -1140,6 +1197,101 @@ export default function AdminRequestsPage() {
             />
             <div className="absolute bottom-4 left-4 right-4 bg-black bg-opacity-50 text-white p-2 rounded text-center">
               <p className="text-sm">クリックで閉じる</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* メールプレビューモーダル */}
+      {showEmailPreviewModal && selectedRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-gray-500 opacity-75" onClick={() => setShowEmailPreviewModal(false)}></div>
+          <div className="relative bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <h2 className="text-xl font-bold mb-4">メール送信プレビュー</h2>
+
+              <div className="space-y-4 mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">送信先</label>
+                  <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded border">
+                    {selectedRequest.applicant_email}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">件名</label>
+                  <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded border">
+                    【つくよみ】店舗編集アカウントのご案内
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">メール本文</label>
+                  <div className="bg-gray-50 px-4 py-3 rounded border text-sm text-gray-900 space-y-3">
+                    <p>{selectedRequest.applicant_name} 様</p>
+
+                    <p>いつもお世話になっております。<br />つくよみ運営チームです。</p>
+
+                    <p>
+                      「{selectedRequest.store_name}」の店舗編集アカウントを発行いたしました。<br />
+                      以下のログイン情報をご確認ください。
+                    </p>
+
+                    <div className="bg-white p-3 rounded border-l-4 border-blue-500">
+                      <p className="font-semibold text-blue-900 mb-2">ログイン情報</p>
+                      <p><strong>ログインURL:</strong><br />{window.location.origin}/admin/login</p>
+                      <p><strong>ログインID:</strong> {selectedRequest.applicant_email}</p>
+                      <p><strong>パスワード:</strong> {selectedRequest.generated_password}</p>
+                    </div>
+
+                    <p className="text-red-600 font-semibold">
+                      ⚠️ セキュリティ上、初回ログイン後は必ずパスワードを変更してください。
+                    </p>
+
+                    <p>
+                      ログイン後は、店舗情報の編集・更新が可能です。<br />
+                      ご不明な点がございましたら、お気軽にお問い合わせください。
+                    </p>
+
+                    <p>
+                      今後ともよろしくお願いいたします。<br />
+                      つくよみ運営チーム
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-4 border-t">
+                <button
+                  onClick={() => setShowEmailPreviewModal(false)}
+                  disabled={isSendingEmail}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 disabled:opacity-50"
+                >
+                  キャンセル
+                </button>
+                <button
+                  onClick={handleSendCredentialsEmail}
+                  disabled={isSendingEmail}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 flex items-center"
+                >
+                  {isSendingEmail ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      送信中...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      送信
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>

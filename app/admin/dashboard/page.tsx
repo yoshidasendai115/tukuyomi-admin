@@ -13,7 +13,9 @@ interface DashboardStats {
   approvedRequests: number;
   totalStores: number;
   freeStores: number;
+  basicStores: number;
   standardStores: number;
+  advancedStores: number;
   premiumStores: number;
   pendingReviewReports: number;
 }
@@ -25,7 +27,9 @@ export default function AdminDashboardPage() {
     approvedRequests: 0,
     totalStores: 0,
     freeStores: 0,
+    basicStores: 0,
     standardStores: 0,
+    advancedStores: 0,
     premiumStores: 0,
     pendingReviewReports: 0
   });
@@ -118,16 +122,26 @@ export default function AdminDashboardPage() {
         .from('stores')
         .select('id', { count: 'exact' });
 
-      // プラン別店舗数
+      // プラン別店舗数（5段階）
       const { data: freeData } = await supabase
         .from('stores')
         .select('id', { count: 'exact' })
         .eq('priority_score', 0);
 
+      const { data: basicData } = await supabase
+        .from('stores')
+        .select('id', { count: 'exact' })
+        .eq('priority_score', 2);
+
       const { data: standardData } = await supabase
         .from('stores')
         .select('id', { count: 'exact' })
         .eq('priority_score', 3);
+
+      const { data: advancedData } = await supabase
+        .from('stores')
+        .select('id', { count: 'exact' })
+        .eq('priority_score', 4);
 
       const { data: premiumData } = await supabase
         .from('stores')
@@ -145,7 +159,9 @@ export default function AdminDashboardPage() {
         approvedRequests: approvedData?.length || 0,
         totalStores: storeData?.length || 0,
         freeStores: freeData?.length || 0,
+        basicStores: basicData?.length || 0,
         standardStores: standardData?.length || 0,
+        advancedStores: advancedData?.length || 0,
         premiumStores: premiumData?.length || 0,
         pendingReviewReports: reviewReportsData?.length || 0
       });
@@ -290,42 +306,66 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* プラン別統計カード */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
+        {/* プラン別統計カード（5段階） */}
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+          <div className="bg-white rounded-lg shadow p-4">
             <div className="flex items-center">
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <svg className="h-8 w-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <svg className="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Free</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.freeStores}</p>
+              <div className="ml-3">
+                <p className="text-xs font-medium text-gray-500">Free</p>
+                <p className="text-xl font-bold text-gray-900">{stats.freeStores}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow p-4">
             <div className="flex items-center">
-              <div className="p-3 bg-gray-100 rounded-lg">
-                <span className="text-3xl">🥈</span>
+              <div className="p-2 bg-green-100 rounded-lg">
+                <span className="text-2xl">🥉</span>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Standard</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.standardStores}</p>
+              <div className="ml-3">
+                <p className="text-xs font-medium text-gray-500">Basic</p>
+                <p className="text-xl font-bold text-gray-900">{stats.basicStores}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow p-4">
             <div className="flex items-center">
-              <div className="p-3 bg-yellow-100 rounded-lg">
-                <span className="text-3xl">🥇</span>
+              <div className="p-2 bg-gray-100 rounded-lg">
+                <span className="text-2xl">🥈</span>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Premium</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.premiumStores}</p>
+              <div className="ml-3">
+                <p className="text-xs font-medium text-gray-500">Standard</p>
+                <p className="text-xl font-bold text-gray-900">{stats.standardStores}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-4">
+            <div className="flex items-center">
+              <div className="p-2 bg-orange-100 rounded-lg">
+                <span className="text-2xl">💎</span>
+              </div>
+              <div className="ml-3">
+                <p className="text-xs font-medium text-gray-500">Advanced</p>
+                <p className="text-xl font-bold text-gray-900">{stats.advancedStores}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-4">
+            <div className="flex items-center">
+              <div className="p-2 bg-yellow-100 rounded-lg">
+                <span className="text-2xl">🥇</span>
+              </div>
+              <div className="ml-3">
+                <p className="text-xs font-medium text-gray-500">Premium</p>
+                <p className="text-xl font-bold text-gray-900">{stats.premiumStores}</p>
               </div>
             </div>
           </div>

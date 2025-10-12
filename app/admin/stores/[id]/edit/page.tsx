@@ -2175,102 +2175,127 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                     <label className="block text-sm font-medium text-gray-700 mb-3">
                       優先表示プラン
                     </label>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {/* Freeプランカード */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                      {/* Freeプラン */}
                       <div
-                        className={`border-2 rounded-lg p-6 cursor-pointer transition-all relative ${
+                        className={`border-2 rounded-lg p-4 cursor-pointer transition-all relative ${
                           formData.priority_score === 0
                             ? 'border-blue-500 bg-blue-50 shadow-md'
                             : 'border-gray-300 hover:border-blue-300 hover:shadow-sm'
                         }`}
-                        onClick={() => {
-                          setFormData(prev => ({ ...prev, priority_score: 0 }));
-                        }}
+                        onClick={() => setFormData(prev => ({ ...prev, priority_score: 0 }))}
                       >
-                        {/* ラジオボタン */}
-                        <div className="absolute top-4 right-4">
-                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                            formData.priority_score === 0
-                              ? 'border-blue-500 bg-blue-500'
-                              : 'border-gray-400 bg-white'
+                        <div className="absolute top-3 right-3">
+                          <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                            formData.priority_score === 0 ? 'border-blue-500 bg-blue-500' : 'border-gray-400 bg-white'
                           }`}>
-                            {formData.priority_score === 0 && (
-                              <div className="w-2 h-2 rounded-full bg-white"></div>
-                            )}
+                            {formData.priority_score === 0 && <div className="w-1.5 h-1.5 rounded-full bg-white"></div>}
                           </div>
                         </div>
-                        <h3 className="text-lg font-bold text-gray-900">Free</h3>
-                        <p className="text-3xl font-bold mt-2 text-gray-900">無料</p>
-                        <ul className="text-sm text-gray-600 mt-3 space-y-1">
-                          <li>• 基本表示のみ</li>
-                          <li>• 検索結果に表示</li>
+                        <h3 className="text-base font-bold text-gray-900">Free</h3>
+                        <p className="text-2xl font-bold mt-1 text-gray-900">無料</p>
+                        <ul className="text-xs text-gray-600 mt-2 space-y-0.5">
+                          <li>• 基本表示</li>
                         </ul>
                       </div>
 
-                      {/* Standardプランカード - シルバー */}
+                      {/* Basicプラン - ブロンズ */}
                       <div
-                        className={`border-2 rounded-lg p-6 cursor-pointer transition-all relative ${
+                        className={`border-2 rounded-lg p-4 cursor-pointer transition-all relative ${
+                          formData.priority_score === 2
+                            ? 'border-amber-600 bg-amber-50 shadow-md'
+                            : 'border-gray-300 hover:border-amber-400 hover:shadow-sm'
+                        }`}
+                        onClick={() => setFormData(prev => ({ ...prev, priority_score: 2 }))}
+                      >
+                        <div className="absolute top-3 right-3">
+                          <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                            formData.priority_score === 2 ? 'border-amber-700 bg-amber-700' : 'border-gray-400 bg-white'
+                          }`}>
+                            {formData.priority_score === 2 && <div className="w-1.5 h-1.5 rounded-full bg-white"></div>}
+                          </div>
+                        </div>
+                        <h3 className="text-base font-bold text-gray-900 flex items-center gap-1">
+                          Basic <span className="text-base">🥉</span>
+                        </h3>
+                        <p className="text-2xl font-bold mt-1 text-gray-900">月500円</p>
+                        <ul className="text-xs text-gray-600 mt-2 space-y-0.5">
+                          <li>• 優先表示</li>
+                        </ul>
+                      </div>
+
+                      {/* Standardプラン - シルバー */}
+                      <div
+                        className={`border-2 rounded-lg p-4 cursor-pointer transition-all relative ${
                           formData.priority_score === 3
                             ? 'border-gray-500 bg-gray-100 shadow-md'
                             : 'border-gray-300 hover:border-gray-400 hover:shadow-sm'
                         }`}
-                        onClick={() => {
-                          setFormData(prev => ({ ...prev, priority_score: 3 }));
-                        }}
+                        onClick={() => setFormData(prev => ({ ...prev, priority_score: 3 }))}
                       >
-                        {/* ラジオボタン */}
-                        <div className="absolute top-4 right-4">
-                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                            formData.priority_score === 3
-                              ? 'border-gray-600 bg-gray-600'
-                              : 'border-gray-400 bg-white'
+                        <div className="absolute top-3 right-3">
+                          <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                            formData.priority_score === 3 ? 'border-gray-600 bg-gray-600' : 'border-gray-400 bg-white'
                           }`}>
-                            {formData.priority_score === 3 && (
-                              <div className="w-2 h-2 rounded-full bg-white"></div>
-                            )}
+                            {formData.priority_score === 3 && <div className="w-1.5 h-1.5 rounded-full bg-white"></div>}
                           </div>
                         </div>
-                        <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                          Standard <span className="text-gray-500">🥈</span>
+                        <h3 className="text-base font-bold text-gray-900 flex items-center gap-1">
+                          Standard <span className="text-base">🥈</span>
                         </h3>
-                        <p className="text-3xl font-bold mt-2 text-gray-900">月980円</p>
-                        <ul className="text-sm text-gray-600 mt-3 space-y-1">
-                          <li>• シルバー表示</li>
-                          <li>• おすすめ一覧に掲載</li>
+                        <p className="text-2xl font-bold mt-1 text-gray-900">月980円</p>
+                        <ul className="text-xs text-gray-600 mt-2 space-y-0.5">
+                          <li>• おすすめ掲載</li>
                         </ul>
                       </div>
 
-                      {/* Premiumプランカード - ゴールド */}
+                      {/* Advancedプラン - ダイヤ */}
                       <div
-                        className={`border-2 rounded-lg p-6 cursor-pointer transition-all relative ${
+                        className={`border-2 rounded-lg p-4 cursor-pointer transition-all relative ${
+                          formData.priority_score === 4
+                            ? 'border-cyan-500 bg-cyan-50 shadow-md'
+                            : 'border-gray-300 hover:border-cyan-400 hover:shadow-sm'
+                        }`}
+                        onClick={() => setFormData(prev => ({ ...prev, priority_score: 4 }))}
+                      >
+                        <div className="absolute top-3 right-3">
+                          <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                            formData.priority_score === 4 ? 'border-cyan-600 bg-cyan-600' : 'border-gray-400 bg-white'
+                          }`}>
+                            {formData.priority_score === 4 && <div className="w-1.5 h-1.5 rounded-full bg-white"></div>}
+                          </div>
+                        </div>
+                        <h3 className="text-base font-bold text-gray-900 flex items-center gap-1">
+                          Advanced <span className="text-base">💎</span>
+                        </h3>
+                        <p className="text-2xl font-bold mt-1 text-gray-900">月1,500円</p>
+                        <ul className="text-xs text-gray-600 mt-2 space-y-0.5">
+                          <li>• 高優先掲載</li>
+                        </ul>
+                      </div>
+
+                      {/* Premiumプラン - ゴールド */}
+                      <div
+                        className={`border-2 rounded-lg p-4 cursor-pointer transition-all relative ${
                           formData.priority_score === 5
                             ? 'border-yellow-500 bg-yellow-50 shadow-md'
                             : 'border-gray-300 hover:border-yellow-400 hover:shadow-sm'
                         }`}
-                        onClick={() => {
-                          setFormData(prev => ({ ...prev, priority_score: 5 }));
-                        }}
+                        onClick={() => setFormData(prev => ({ ...prev, priority_score: 5 }))}
                       >
-                        {/* ラジオボタン */}
-                        <div className="absolute top-4 right-4">
-                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                            formData.priority_score === 5
-                              ? 'border-yellow-600 bg-yellow-600'
-                              : 'border-gray-400 bg-white'
+                        <div className="absolute top-3 right-3">
+                          <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                            formData.priority_score === 5 ? 'border-yellow-600 bg-yellow-600' : 'border-gray-400 bg-white'
                           }`}>
-                            {formData.priority_score === 5 && (
-                              <div className="w-2 h-2 rounded-full bg-white"></div>
-                            )}
+                            {formData.priority_score === 5 && <div className="w-1.5 h-1.5 rounded-full bg-white"></div>}
                           </div>
                         </div>
-                        <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                          Premium <span className="text-yellow-500">🥇</span>
+                        <h3 className="text-base font-bold text-gray-900 flex items-center gap-1">
+                          Premium <span className="text-base">🥇</span>
                         </h3>
-                        <p className="text-3xl font-bold mt-2 text-gray-900">月1,980円</p>
-                        <ul className="text-sm text-gray-600 mt-3 space-y-1">
-                          <li>• ゴールド表示</li>
-                          <li>• トップページ掲載</li>
-                          <li>• 最優先表示</li>
+                        <p className="text-2xl font-bold mt-1 text-gray-900">月1,980円</p>
+                        <ul className="text-xs text-gray-600 mt-2 space-y-0.5">
+                          <li>• 最優先掲載</li>
                         </ul>
                       </div>
                     </div>

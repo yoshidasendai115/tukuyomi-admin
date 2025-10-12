@@ -58,7 +58,7 @@ export default function StoresPageClient() {
   const [selectedArea, setSelectedArea] = useState(searchParams.get('area') || '');
   const [selectedGenre, setSelectedGenre] = useState(searchParams.get('genre') || '');
   const [showInactive, setShowInactive] = useState(searchParams.get('showInactive') === 'true');
-  const [selectedPlan, setSelectedPlan] = useState<string>(searchParams.get('plan') || 'all'); // 'all', 'free', 'standard', 'premium'
+  const [selectedPlan, setSelectedPlan] = useState<string>(searchParams.get('plan') || 'all'); // 'all', 'free', 'basic', 'standard', 'advanced', 'premium'
   const [areaInput, setAreaInput] = useState(searchParams.get('area') || '');
   const [showAreaSuggestions, setShowAreaSuggestions] = useState(false);
   const [filteredAreas, setFilteredAreas] = useState<Area[]>([]);
@@ -439,7 +439,9 @@ export default function StoresPageClient() {
               >
                 <option value="all">すべて</option>
                 <option value="free">Free</option>
+                <option value="basic">Basic</option>
                 <option value="standard">Standard</option>
+                <option value="advanced">Advanced</option>
                 <option value="premium">Premium</option>
               </select>
             </div>
@@ -537,9 +539,17 @@ export default function StoresPageClient() {
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-400">
                           🥇 Premium
                         </span>
+                      ) : store.priority_score === 4 ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-400">
+                          💎 Advanced
+                        </span>
                       ) : store.priority_score === 3 ? (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-400">
                           🥈 Standard
+                        </span>
+                      ) : store.priority_score === 2 ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 border border-orange-400">
+                          🥉 Basic
                         </span>
                       ) : (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">

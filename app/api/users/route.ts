@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getSession } from '@/lib/auth';
-import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
 
 // GET: 管理者一覧取得
 export async function GET(request: NextRequest) {
@@ -63,8 +63,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // MD5でパスワードをハッシュ化（本番環境ではbcryptを推奨）
-    const password_hash = crypto.createHash('md5').update(password).digest('hex');
+    // bcryptでパスワードをハッシュ化
+    const password_hash = await bcrypt.hash(password, 10);
 
     const { data, error } = await supabaseAdmin
       .from('admin_auth_users')
@@ -134,7 +134,7 @@ export async function PUT(request: NextRequest) {
 
     // パスワードが指定された場合のみハッシュ化して更新
     if (password) {
-      updateData.password_hash = crypto.createHash('md5').update(password).digest('hex');
+      updateData.password_hash = await bcrypt.hash(password, 10);
     }
 
     const { data, error } = await supabaseAdmin

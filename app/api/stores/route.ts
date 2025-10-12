@@ -69,8 +69,12 @@ export async function GET(request: NextRequest) {
       let priorityScore: number;
       if (plan === 'free') {
         priorityScore = 0;
+      } else if (plan === 'basic') {
+        priorityScore = 2;
       } else if (plan === 'standard') {
         priorityScore = 3;
+      } else if (plan === 'advanced') {
+        priorityScore = 4;
       } else if (plan === 'premium') {
         priorityScore = 5;
       } else {

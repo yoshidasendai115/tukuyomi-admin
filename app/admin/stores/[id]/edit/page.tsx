@@ -198,6 +198,16 @@ function AdminStoreEditPageContent({ params }: PageProps) {
     storeName?: string;
   }>({ exists: false });
 
+  // プラン情報
+  const [subscriptionPlans, setSubscriptionPlans] = useState<Array<{
+    id: string;
+    name: string;
+    display_name: string;
+    price: number;
+    description?: string;
+    display_order: number;
+  }>>([]);
+
   // 距離計算
   const [isCalculatingDistance, setIsCalculatingDistance] = useState(false);
 
@@ -218,6 +228,30 @@ function AdminStoreEditPageContent({ params }: PageProps) {
       checkAuthAndFetchStore();
     }
   }, [storeId, paramsLoaded]);
+
+  // subscription_plansデータを取得
+  useEffect(() => {
+    const fetchSubscriptionPlans = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('subscription_plans')
+          .select('id, name, display_name, price, description, display_order')
+          .eq('is_active', true)
+          .order('display_order', { ascending: true });
+
+        if (error) {
+          console.error('Error fetching subscription plans:', error);
+          return;
+        }
+
+        setSubscriptionPlans(data || []);
+      } catch (error) {
+        console.error('Error fetching subscription plans:', error);
+      }
+    };
+
+    fetchSubscriptionPlans();
+  }, []);
 
   const checkAuthAndFetchStore = async () => {
     try {
@@ -2176,128 +2210,109 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                       優先表示プラン
                     </label>
                     <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
-                      {/* Freeプラン */}
-                      <div
-                        className={`border-2 rounded-lg p-4 cursor-pointer transition-all relative ${
-                          formData.priority_score === 0
-                            ? 'border-blue-500 bg-blue-50 shadow-md'
-                            : 'border-gray-300 bg-white hover:border-blue-300 hover:bg-gray-50 hover:shadow-sm'
-                        }`}
-                        onClick={() => setFormData(prev => ({ ...prev, priority_score: 0 }))}
-                      >
-                        <div className="absolute top-3 right-3">
-                          <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                            formData.priority_score === 0 ? 'border-blue-500 bg-blue-500' : 'border-gray-400 bg-white'
-                          }`}>
-                            {formData.priority_score === 0 && <div className="w-1.5 h-1.5 rounded-full bg-white"></div>}
-                          </div>
-                        </div>
-                        <h3 className="text-base font-bold text-gray-900">Free</h3>
-                        <p className="text-2xl font-bold mt-1 text-gray-900">無料</p>
-                        <ul className="text-xs text-gray-600 mt-2 space-y-0.5">
-                          <li>• 基本表示</li>
-                        </ul>
-                      </div>
+                      {subscriptionPlans.map((plan) => {
+                        // nameからpriority_scoreへのマッピング
+                        const getPriorityScore = (name: string): number => {
+                          const mapping: Record<string, number> = {
+                            'free': 0,
+                            'light': 1,
+                            'basic': 2,
+                            'premium5': 3,
+                            'premium10': 4,
+                            'premium15': 5
+                          };
+                          return mapping[name] ?? 0;
+                        };
 
-                      {/* Basicプラン - ブロンズ */}
-                      <div
-                        className={`border-2 rounded-lg p-4 cursor-pointer transition-all relative ${
-                          formData.priority_score === 2
-                            ? 'border-amber-600 bg-amber-50 shadow-md'
-                            : 'border-gray-300 bg-white hover:border-amber-400 hover:bg-amber-50/30 hover:shadow-sm'
-                        }`}
-                        onClick={() => setFormData(prev => ({ ...prev, priority_score: 2 }))}
-                      >
-                        <div className="absolute top-3 right-3">
-                          <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                            formData.priority_score === 2 ? 'border-amber-700 bg-amber-700' : 'border-gray-400 bg-white'
-                          }`}>
-                            {formData.priority_score === 2 && <div className="w-1.5 h-1.5 rounded-full bg-white"></div>}
-                          </div>
-                        </div>
-                        <h3 className="text-base font-bold text-gray-900 flex items-center gap-1">
-                          Basic <span className="text-base">🥉</span>
-                        </h3>
-                        <p className="text-2xl font-bold mt-1 text-gray-900">月500円</p>
-                        <ul className="text-xs text-gray-600 mt-2 space-y-0.5">
-                          <li>• 優先表示</li>
-                        </ul>
-                      </div>
+                        // プランアイコンのマッピング
+                        const getPlanIcon = (name: string): string => {
+                          const iconMapping: Record<string, string> = {
+                            'free': '',
+                            'light': '🥉',
+                            'basic': '🥈',
+                            'premium5': '💎',
+                            'premium10': '🥇',
+                            'premium15': '👑'
+                          };
+                          return iconMapping[name] ?? '';
+                        };
 
-                      {/* Standardプラン - シルバー */}
-                      <div
-                        className={`border-2 rounded-lg p-4 cursor-pointer transition-all relative ${
-                          formData.priority_score === 3
-                            ? 'border-gray-500 bg-gray-100 shadow-md'
-                            : 'border-gray-300 bg-white hover:border-gray-400 hover:bg-gray-50 hover:shadow-sm'
-                        }`}
-                        onClick={() => setFormData(prev => ({ ...prev, priority_score: 3 }))}
-                      >
-                        <div className="absolute top-3 right-3">
-                          <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                            formData.priority_score === 3 ? 'border-gray-600 bg-gray-600' : 'border-gray-400 bg-white'
-                          }`}>
-                            {formData.priority_score === 3 && <div className="w-1.5 h-1.5 rounded-full bg-white"></div>}
-                          </div>
-                        </div>
-                        <h3 className="text-base font-bold text-gray-900 flex items-center gap-1">
-                          Standard <span className="text-base">🥈</span>
-                        </h3>
-                        <p className="text-2xl font-bold mt-1 text-gray-900">月980円</p>
-                        <ul className="text-xs text-gray-600 mt-2 space-y-0.5">
-                          <li>• おすすめ掲載</li>
-                        </ul>
-                      </div>
+                        // プランカラーのマッピング
+                        const getPlanColors = (name: string) => {
+                          const colorMapping: Record<string, { active: string; inactive: string; radio: string }> = {
+                            'free': {
+                              active: 'border-blue-500 bg-blue-50 shadow-md',
+                              inactive: 'border-gray-300 bg-white hover:border-blue-300 hover:bg-gray-50 hover:shadow-sm',
+                              radio: 'border-blue-500 bg-blue-500'
+                            },
+                            'light': {
+                              active: 'border-amber-600 bg-amber-50 shadow-md',
+                              inactive: 'border-gray-300 bg-white hover:border-amber-400 hover:bg-amber-50/30 hover:shadow-sm',
+                              radio: 'border-amber-700 bg-amber-700'
+                            },
+                            'basic': {
+                              active: 'border-gray-500 bg-gray-100 shadow-md',
+                              inactive: 'border-gray-300 bg-white hover:border-gray-400 hover:bg-gray-50 hover:shadow-sm',
+                              radio: 'border-gray-600 bg-gray-600'
+                            },
+                            'premium5': {
+                              active: 'border-cyan-500 bg-cyan-50 shadow-md',
+                              inactive: 'border-gray-300 bg-white hover:border-cyan-400 hover:bg-cyan-50/30 hover:shadow-sm',
+                              radio: 'border-cyan-600 bg-cyan-600'
+                            },
+                            'premium10': {
+                              active: 'border-yellow-500 bg-yellow-50 shadow-md',
+                              inactive: 'border-gray-300 bg-white hover:border-yellow-400 hover:bg-yellow-50/30 hover:shadow-sm',
+                              radio: 'border-yellow-600 bg-yellow-600'
+                            },
+                            'premium15': {
+                              active: 'border-purple-500 bg-purple-50 shadow-md',
+                              inactive: 'border-gray-300 bg-white hover:border-purple-400 hover:bg-purple-50/30 hover:shadow-sm',
+                              radio: 'border-purple-600 bg-purple-600'
+                            }
+                          };
+                          return colorMapping[name] ?? colorMapping['free'];
+                        };
 
-                      {/* Advancedプラン - ダイヤ */}
-                      <div
-                        className={`border-2 rounded-lg p-4 cursor-pointer transition-all relative ${
-                          formData.priority_score === 4
-                            ? 'border-cyan-500 bg-cyan-50 shadow-md'
-                            : 'border-gray-300 bg-white hover:border-cyan-400 hover:bg-cyan-50/30 hover:shadow-sm'
-                        }`}
-                        onClick={() => setFormData(prev => ({ ...prev, priority_score: 4 }))}
-                      >
-                        <div className="absolute top-3 right-3">
-                          <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                            formData.priority_score === 4 ? 'border-cyan-600 bg-cyan-600' : 'border-gray-400 bg-white'
-                          }`}>
-                            {formData.priority_score === 4 && <div className="w-1.5 h-1.5 rounded-full bg-white"></div>}
-                          </div>
-                        </div>
-                        <h3 className="text-base font-bold text-gray-900 flex items-center gap-1">
-                          Advanced <span className="text-base">💎</span>
-                        </h3>
-                        <p className="text-2xl font-bold mt-1 text-gray-900">月1,500円</p>
-                        <ul className="text-xs text-gray-600 mt-2 space-y-0.5">
-                          <li>• 高優先掲載</li>
-                        </ul>
-                      </div>
+                        // 価格表示のフォーマット
+                        const formatPrice = (price: number): string => {
+                          if (price === 0) return '無料';
+                          return `月${price.toLocaleString()}円`;
+                        };
 
-                      {/* Premiumプラン - ゴールド */}
-                      <div
-                        className={`border-2 rounded-lg p-4 cursor-pointer transition-all relative ${
-                          formData.priority_score === 5
-                            ? 'border-yellow-500 bg-yellow-50 shadow-md'
-                            : 'border-gray-300 bg-white hover:border-yellow-400 hover:bg-yellow-50/30 hover:shadow-sm'
-                        }`}
-                        onClick={() => setFormData(prev => ({ ...prev, priority_score: 5 }))}
-                      >
-                        <div className="absolute top-3 right-3">
-                          <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                            formData.priority_score === 5 ? 'border-yellow-600 bg-yellow-600' : 'border-gray-400 bg-white'
-                          }`}>
-                            {formData.priority_score === 5 && <div className="w-1.5 h-1.5 rounded-full bg-white"></div>}
+                        const priorityScore = getPriorityScore(plan.name);
+                        const icon = getPlanIcon(plan.name);
+                        const colors = getPlanColors(plan.name);
+                        const priceDisplay = formatPrice(plan.price);
+                        const isSelected = formData.priority_score === priorityScore;
+
+                        return (
+                          <div
+                            key={plan.id}
+                            className={`border-2 rounded-lg p-4 cursor-pointer transition-all relative ${
+                              isSelected ? colors.active : colors.inactive
+                            }`}
+                            onClick={() => setFormData(prev => ({ ...prev, priority_score: priorityScore }))}
+                          >
+                            <div className="absolute top-3 right-3">
+                              <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                                isSelected ? colors.radio : 'border-gray-400 bg-white'
+                              }`}>
+                                {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white"></div>}
+                              </div>
+                            </div>
+                            <h3 className="text-base font-bold text-gray-900 flex items-center gap-1">
+                              {plan.display_name} {icon && <span className="text-base">{icon}</span>}
+                            </h3>
+                            <p className="text-2xl font-bold mt-1 text-gray-900">{priceDisplay}</p>
+                            {plan.description && (
+                              <ul className="text-xs text-gray-600 mt-2 space-y-0.5">
+                                <li>• {plan.description}</li>
+                              </ul>
+                            )}
                           </div>
-                        </div>
-                        <h3 className="text-base font-bold text-gray-900 flex items-center gap-1">
-                          Premium <span className="text-base">🥇</span>
-                        </h3>
-                        <p className="text-2xl font-bold mt-1 text-gray-900">月1,980円</p>
-                        <ul className="text-xs text-gray-600 mt-2 space-y-0.5">
-                          <li>• 最優先掲載</li>
-                        </ul>
-                      </div>
+                        );
+                      })}
                     </div>
                     <p className="mt-3 text-sm text-gray-500">
                       ※ 同じプラン内ではランダムに表示されます

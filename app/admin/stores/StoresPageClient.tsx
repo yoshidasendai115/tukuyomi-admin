@@ -35,6 +35,15 @@ interface Genre {
   display_order: number;
 }
 
+interface SubscriptionPlan {
+  id: string;
+  name: string;
+  display_name: string;
+  price: number;
+  description?: string;
+  display_order: number;
+}
+
 interface Pagination {
   total: number;
   page: number;
@@ -49,6 +58,7 @@ export default function StoresPageClient() {
   const [stores, setStores] = useState<Store[]>([]);
   const [areas, setAreas] = useState<Area[]>([]);
   const [genres, setGenres] = useState<Genre[]>([]);
+  const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([]);
   const [isInitialLoading, setIsInitialLoading] = useState(true); // 初回ロードのみ
   const [isUpdating, setIsUpdating] = useState(false); // データ更新中の表示
 
@@ -173,15 +183,17 @@ export default function StoresPageClient() {
 
       // 初回のみマスタデータも取得
       if (isInitialLoading) {
-        const [storesRes, areasRes, genresRes] = await Promise.all([
+        const [storesRes, areasRes, genresRes, plansRes] = await Promise.all([
           fetch(`/api/stores?${params}`),
           fetch('/api/masters/stations'),
-          fetch('/api/masters/genres')
+          fetch('/api/masters/genres'),
+          fetch('/api/masters/subscription-plans')
         ]);
 
         const storesData = await storesRes.json();
         const areasData = await areasRes.json();
         const genresData = await genresRes.json();
+        const plansData = await plansRes.json();
 
         if (!areasData.error) {
           setAreas(areasData.data || areasData || []);
@@ -192,6 +204,11 @@ export default function StoresPageClient() {
           const genresArray = Array.isArray(genresData) ? genresData : (genresData.data || []);
           const visibleGenres = genresArray.filter((g: Genre) => g.is_visible);
           setGenres(visibleGenres);
+        }
+
+        if (!plansData.error) {
+          const plansArray = Array.isArray(plansData) ? plansData : (plansData.data || []);
+          setSubscriptionPlans(plansArray);
         }
 
         if (storesData.error) {
@@ -312,6 +329,50 @@ export default function StoresPageClient() {
     }
   };
 
+
+  // priority_scoreからプラン情報を取得するヘルパー関数
+  const getPlanByPriorityScore = (priorityScore: number): SubscriptionPlan | undefined => {
+    // priority_scoreとnameのマッピング
+    const priorityToName: Record<number, string> = {
+      0: 'free',
+      1: 'light',
+      2: 'basic',
+      3: 'premium5',
+      4: 'premium10',
+      5: 'premium15'
+    };
+
+    const planName = priorityToName[priorityScore];
+    if (!planName) return undefined;
+
+    return subscriptionPlans.find(plan => plan.name === planName);
+  };
+
+  // priority_scoreからアイコンを取得
+  const getPlanIcon = (priorityScore: number): string => {
+    const iconMapping: Record<number, string> = {
+      0: '',
+      1: '🥉',
+      2: '🥈',
+      3: '💎',
+      4: '🥇',
+      5: '👑'
+    };
+    return iconMapping[priorityScore] ?? '';
+  };
+
+  // priority_scoreからカラーを取得
+  const getPlanColors = (priorityScore: number) => {
+    const colorMapping: Record<number, string> = {
+      0: 'bg-blue-50 text-blue-700 border-blue-200',
+      1: 'bg-amber-100 text-amber-800 border-amber-400',
+      2: 'bg-gray-100 text-gray-800 border-gray-400',
+      3: 'bg-cyan-100 text-cyan-800 border-cyan-400',
+      4: 'bg-yellow-100 text-yellow-800 border-yellow-400',
+      5: 'bg-purple-100 text-purple-800 border-purple-400'
+    };
+    return colorMapping[priorityScore] ?? 'bg-gray-50 text-gray-700 border-gray-200';
+  };
 
   // APIでフィルタリング済みなので、storesをそのまま使用
   const filteredStores = stores;
@@ -535,27 +596,18 @@ export default function StoresPageClient() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap min-w-32">
                     <div className="flex flex-col space-y-1">
-                      {store.priority_score === 5 ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-400">
-                          🥇 Premium
-                        </span>
-                      ) : store.priority_score === 4 ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-400">
-                          💎 Advanced
-                        </span>
-                      ) : store.priority_score === 3 ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-400">
-                          🥈 Standard
-                        </span>
-                      ) : store.priority_score === 2 ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 border border-orange-400">
-                          🥉 Basic
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
-                          Free
-                        </span>
-                      )}
+                      {(() => {
+                        const plan = getPlanByPriorityScore(store.priority_score);
+                        const icon = getPlanIcon(store.priority_score);
+                        const colors = getPlanColors(store.priority_score);
+                        const displayName = plan?.display_name || 'Free';
+
+                        return (
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${colors}`}>
+                            {icon && `${icon} `}{displayName}
+                          </span>
+                        );
+                      })()}
                       {store.is_recommended && (
                         <span className="text-xs text-gray-500">★ おすすめ</span>
                       )}

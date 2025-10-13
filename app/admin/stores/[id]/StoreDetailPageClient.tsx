@@ -18,11 +18,8 @@ interface Store {
   regular_holiday?: string;
   thumbnail_url?: string;
   is_active: boolean;
-  is_recommended: boolean;
-  priority_score: number;
+  subscription_plan_id: number | null;
   recommendation_reason?: string;
-  recommended_at?: string;
-  recommended_by?: string;
   created_at: string;
   updated_at: string;
 }
@@ -185,24 +182,18 @@ export default function StoreDetailPageClient() {
                 </dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-gray-500">優先表示</dt>
+                <dt className="text-sm font-medium text-gray-500">プラン</dt>
                 <dd className="mt-1">
                   <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                    store.is_recommended
+                    store.subscription_plan_id && store.subscription_plan_id > 0
                       ? 'bg-yellow-100 text-yellow-800'
                       : 'bg-gray-100 text-gray-800'
                   }`}>
-                    {store.is_recommended ? `★ おすすめ（優先度: ${store.priority_score}）` : '通常'}
+                    {store.subscription_plan_id && store.subscription_plan_id > 0 ? `有料プラン（ID: ${store.subscription_plan_id}）` : 'Free'}
                   </span>
                 </dd>
               </div>
             </dl>
-            {store.is_recommended && store.recommendation_reason && (
-              <div className="mt-4">
-                <dt className="text-sm font-medium text-gray-500">優先表示理由</dt>
-                <dd className="mt-1 text-sm text-gray-900">{store.recommendation_reason}</dd>
-              </div>
-            )}
           </div>
 
           {/* システム情報 */}

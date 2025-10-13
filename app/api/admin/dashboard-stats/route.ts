@@ -62,12 +62,22 @@ export async function GET() {
       .select('id', { count: 'exact', head: true })
       .eq('status', 'pending');
 
+    // プラン期限切れ店舗数
+    const now = new Date().toISOString();
+    const { count: expiredStoresCount } = await supabaseAdmin
+      .from('stores')
+      .select('id', { count: 'exact', head: true })
+      .neq('subscription_plan_id', 0)
+      .not('plan_expires_at', 'is', null)
+      .lt('plan_expires_at', now);
+
     return NextResponse.json({
       pendingRequests: pendingCount || 0,
       approvedRequests: approvedCount || 0,
       totalStores: storeCount || 0,
       planStats,
       pendingReviewReports: reviewReportsCount || 0,
+      expiredStores: expiredStoresCount || 0,
     });
   } catch (error) {
     console.error('Error fetching dashboard stats:', error);

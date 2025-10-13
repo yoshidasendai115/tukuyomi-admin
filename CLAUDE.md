@@ -169,6 +169,62 @@ This document defines the project's rules, objectives, and progress management m
 
 ## Programming Rules
 
+### 🚨 TypeScript コーディングルール（最重要）
+
+#### オプショナルチェーンの使用禁止
+
+**絶対的禁止事項：**
+- オプショナルチェーン（`?.`）の使用は**原則禁止**
+- オプショナル型パラメータ（`?:`）の使用は**原則禁止**
+- これらを使用すると、ビルドエラーが不明瞭になり、デバッグが困難になる
+
+**理由：**
+- TypeScriptのビルドエラーメッセージが曖昧になる
+- 実行時エラーの原因特定が困難になる
+- null/undefinedの扱いが不明確になる
+
+**必須の代替手段：**
+
+```typescript
+// ❌ 禁止：オプショナルチェーンの使用
+if (store.subscription_plan_id?.toString()) { }
+const value = obj?.prop?.value;
+
+// ✅ 推奨：明示的なnull/undefinedチェック
+if (
+  typeof store.subscription_plan_id !== 'undefined' &&
+  store.subscription_plan_id !== null
+) {
+  const strValue = store.subscription_plan_id.toString();
+}
+
+// ❌ 禁止：オプショナル型パラメータ
+interface Store {
+  subscription_plan_id?: number;
+  plan_expires_at?: string;
+}
+
+// ✅ 推奨：明示的なnull許容型
+interface Store {
+  subscription_plan_id: number | null;
+  plan_expires_at: string | null;
+}
+```
+
+**例外的に許可される場合：**
+- UIフォーム入力で、ユーザー入力が未確定の場合のみ
+- その場合も、可能な限り `| null` や `| undefined` を明示する
+
+**この規則は以下のタイミングで必ず再確認すること：**
+1. 新しいコード作成時
+2. 既存コードの修正時
+3. リファクタリング時
+4. ユーザーからの新しいタスク指示を受けた直後
+
+---
+
+### その他のプログラミングルール
+
 - Avoid hard-coding values unless absolutely necessary.
 - Do not use `any` or `unknown` types in TypeScript.
 - You must not use a TypeScript `class` unless it is absolutely necessary (e.g., extending the `Error` class for custom error handling that requires `instanceof` checks).

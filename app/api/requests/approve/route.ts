@@ -87,8 +87,6 @@ export async function POST(request: NextRequest) {
           genre_id: requestData.genre_id || null,
           email: requestData.applicant_email,
           is_active: true,
-          priority_score: 0,
-          plan_type: 'free',
           latitude,
           longitude
         })
@@ -153,8 +151,6 @@ export async function POST(request: NextRequest) {
             genre_id: requestData.genre_id || null,
             email: requestData.applicant_email,
             is_active: true,
-            priority_score: 0,
-            plan_type: 'free',
             latitude,
             longitude
           })

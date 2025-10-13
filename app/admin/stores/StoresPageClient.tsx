@@ -14,8 +14,10 @@ interface Store {
   phone: string;
   is_active: boolean;
   is_recommended: boolean;
-  priority_score: number;
-  recommendation_reason?: string;
+  subscription_plan_id: number | null;
+  plan_started_at: string | null;
+  plan_expires_at: string | null;
+  recommendation_reason: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -68,7 +70,7 @@ export default function StoresPageClient() {
   const [selectedArea, setSelectedArea] = useState(searchParams.get('area') || '');
   const [selectedGenre, setSelectedGenre] = useState(searchParams.get('genre') || '');
   const [showInactive, setShowInactive] = useState(searchParams.get('showInactive') === 'true');
-  const [selectedPlan, setSelectedPlan] = useState<string>(searchParams.get('plan') || 'all'); // 'all', 'free', 'basic', 'standard', 'advanced', 'premium'
+  const [selectedPlan, setSelectedPlan] = useState<string>(searchParams.get('plan') || 'all');
   const [areaInput, setAreaInput] = useState(searchParams.get('area') || '');
   const [showAreaSuggestions, setShowAreaSuggestions] = useState(false);
   const [filteredAreas, setFilteredAreas] = useState<Area[]>([]);
@@ -313,7 +315,6 @@ export default function StoresPageClient() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           is_recommended: isRecommended,
-          priority_score: score,
           recommendation_reason: reason,
           recommended_at: isRecommended ? new Date().toISOString() : null
         })
@@ -329,49 +330,66 @@ export default function StoresPageClient() {
     }
   };
 
+  // プラン期限切れ判定ヘルパー関数
+  const isPlanExpired = (store: Store): boolean => {
+    if (
+      typeof store.subscription_plan_id === 'undefined' ||
+      store.subscription_plan_id === null ||
+      store.subscription_plan_id === 0
+    ) {
+      return false;
+    }
 
-  // priority_scoreからプラン情報を取得するヘルパー関数
-  const getPlanByPriorityScore = (priorityScore: number): SubscriptionPlan | undefined => {
-    // priority_scoreとnameのマッピング
-    const priorityToName: Record<number, string> = {
-      0: 'free',
-      1: 'light',
-      2: 'basic',
-      3: 'premium5',
-      4: 'premium10',
-      5: 'premium15'
-    };
+    if (
+      typeof store.plan_expires_at === 'undefined' ||
+      store.plan_expires_at === null
+    ) {
+      return false;
+    }
 
-    const planName = priorityToName[priorityScore];
-    if (!planName) return undefined;
-
-    return subscriptionPlans.find(plan => plan.name === planName);
+    const now = new Date();
+    const expiresAt = new Date(store.plan_expires_at);
+    return now > expiresAt;
   };
 
-  // priority_scoreからアイコンを取得
-  const getPlanIcon = (priorityScore: number): string => {
-    const iconMapping: Record<number, string> = {
-      0: '',
-      1: '🥉',
-      2: '🥈',
-      3: '💎',
-      4: '🥇',
-      5: '👑'
-    };
-    return iconMapping[priorityScore] ?? '';
+  // subscription_plan_idからプラン情報を取得するヘルパー関数
+  const getPlanBySubscriptionId = (subscriptionPlanId: number | null): SubscriptionPlan | undefined => {
+    if (subscriptionPlanId === null) {
+      return subscriptionPlans.find(plan => plan.id === 0);
+    }
+    return subscriptionPlans.find(plan => plan.id === subscriptionPlanId);
   };
 
-  // priority_scoreからカラーを取得
-  const getPlanColors = (priorityScore: number) => {
-    const colorMapping: Record<number, string> = {
-      0: 'bg-blue-50 text-blue-700 border-blue-200',
-      1: 'bg-amber-100 text-amber-800 border-amber-400',
-      2: 'bg-gray-100 text-gray-800 border-gray-400',
-      3: 'bg-cyan-100 text-cyan-800 border-cyan-400',
-      4: 'bg-yellow-100 text-yellow-800 border-yellow-400',
-      5: 'bg-purple-100 text-purple-800 border-purple-400'
+  // subscription_plan_idからアイコンを取得
+  const getPlanIcon = (subscriptionPlanId: number | null): string => {
+    const plan = getPlanBySubscriptionId(subscriptionPlanId);
+    if (!plan) return '';
+
+    const iconMapping: Record<string, string> = {
+      'free': '',
+      'light': '🥉',
+      'basic': '🥈',
+      'premium5': '💎',
+      'premium10': '🥇',
+      'premium15': '👑'
     };
-    return colorMapping[priorityScore] ?? 'bg-gray-50 text-gray-700 border-gray-200';
+    return iconMapping[plan.name] ?? '';
+  };
+
+  // subscription_plan_idからカラーを取得
+  const getPlanColors = (subscriptionPlanId: number | null) => {
+    const plan = getPlanBySubscriptionId(subscriptionPlanId);
+    if (!plan) return 'bg-gray-50 text-gray-700 border-gray-200';
+
+    const colorMapping: Record<string, string> = {
+      'free': 'bg-blue-50 text-blue-700 border-blue-200',
+      'light': 'bg-amber-100 text-amber-800 border-amber-400',
+      'basic': 'bg-gray-100 text-gray-800 border-gray-400',
+      'premium5': 'bg-cyan-100 text-cyan-800 border-cyan-400',
+      'premium10': 'bg-yellow-100 text-yellow-800 border-yellow-400',
+      'premium15': 'bg-purple-100 text-purple-800 border-purple-400'
+    };
+    return colorMapping[plan.name] ?? 'bg-gray-50 text-gray-700 border-gray-200';
   };
 
   // APIでフィルタリング済みなので、storesをそのまま使用
@@ -499,11 +517,11 @@ export default function StoresPageClient() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900"
               >
                 <option value="all">すべて</option>
-                <option value="free">Free</option>
-                <option value="basic">Basic</option>
-                <option value="standard">Standard</option>
-                <option value="advanced">Advanced</option>
-                <option value="premium">Premium</option>
+                {subscriptionPlans.map((plan) => (
+                  <option key={plan.id} value={plan.name}>
+                    {plan.display_name}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -596,18 +614,30 @@ export default function StoresPageClient() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap min-w-32">
                     <div className="flex flex-col space-y-1">
-                      {(() => {
-                        const plan = getPlanByPriorityScore(store.priority_score);
-                        const icon = getPlanIcon(store.priority_score);
-                        const colors = getPlanColors(store.priority_score);
-                        const displayName = plan?.display_name || 'Free';
+                      <div className="flex items-center space-x-2">
+                        {(() => {
+                          const plan = getPlanBySubscriptionId(store.subscription_plan_id);
+                          const icon = getPlanIcon(store.subscription_plan_id);
+                          const colors = getPlanColors(store.subscription_plan_id);
+                          const displayName = plan !== null && plan !== undefined ? plan.display_name : 'Free';
 
-                        return (
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${colors}`}>
-                            {icon && `${icon} `}{displayName}
+                          return (
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${colors}`}>
+                              {icon && `${icon} `}{displayName}
+                            </span>
+                          );
+                        })()}
+                        {isPlanExpired(store) && (
+                          <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                            期限切れ
                           </span>
-                        );
-                      })()}
+                        )}
+                      </div>
+                      {isPlanExpired(store) && store.plan_expires_at && (
+                        <p className="text-xs text-red-600">
+                          期限: {new Date(store.plan_expires_at).toLocaleDateString('ja-JP')}
+                        </p>
+                      )}
                       {store.is_recommended && (
                         <span className="text-xs text-gray-500">★ PR</span>
                       )}

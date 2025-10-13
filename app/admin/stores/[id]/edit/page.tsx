@@ -81,7 +81,6 @@ interface Store {
   last_updated_by?: string;
   favorite_count?: number;
   application_count?: number;
-  plan_type?: 'free' | 'light' | 'basic' | 'premium5' | 'premium10' | 'premium15';
   subscription_plan_id?: number;
   plan_started_at?: string;
   plan_expires_at?: string;
@@ -95,10 +94,7 @@ interface Store {
   accessible_stations?: any;
   // 優先表示関連
   is_recommended?: boolean;
-  priority_score?: number;
   recommendation_reason?: string;
-  recommended_at?: string;
-  recommended_by?: string;
   // 営業時間の詳細カラム
   hours_monday_open?: string;
   hours_monday_close?: string;
@@ -197,12 +193,6 @@ function AdminStoreEditPageContent({ params }: PageProps) {
   const [additionalImageFiles, setAdditionalImageFiles] = useState<(File | null)[]>([null, null, null]);
   const [mainImagePreview, setMainImagePreview] = useState<string | null>(null);
   const [additionalImagePreviews, setAdditionalImagePreviews] = useState<(string | null)[]>([null, null, null]);
-
-  // 優先度スコアの重複チェック
-  const [priorityScoreConflict, setPriorityScoreConflict] = useState<{
-    exists: boolean;
-    storeName?: string;
-  }>({ exists: false });
 
   // プラン情報
   const [subscriptionPlans, setSubscriptionPlans] = useState<Array<{
@@ -427,15 +417,7 @@ function AdminStoreEditPageContent({ params }: PageProps) {
       }));
     }
 
-    // 優先度スコアの重複チェック
-    if (name === 'priority_score') {
-      const score = value ? Number(value) : 0;
-      if (score > 0 && score <= 100) {
-        checkPriorityScoreConflict(score);
-      } else {
-        setPriorityScoreConflict({ exists: false });
-      }
-    }
+    // priority_scoreは削除済み（subscription_plan_idを使用）
 
     // 駅名入力時のサジェスト表示
     if (name === 'station') {
@@ -461,21 +443,6 @@ function AdminStoreEditPageContent({ params }: PageProps) {
       } else {
         setShowRailwaySuggestions(false);
       }
-    }
-  };
-
-  const checkPriorityScoreConflict = async (score: number) => {
-    try {
-      const response = await fetch(`/api/stores/check-priority-score?score=${score}&excludeStoreId=${store?.id || ''}`);
-      if (response.ok) {
-        const data = await response.json();
-        setPriorityScoreConflict({
-          exists: data.exists,
-          storeName: data.storeName
-        });
-      }
-    } catch (error) {
-      console.error('Error checking priority score:', error);
     }
   };
 
@@ -788,14 +755,17 @@ function AdminStoreEditPageContent({ params }: PageProps) {
 
   // プラン適用開始確定処理
   const confirmActivatePlan = async () => {
+    if (!store) {
+      throw new Error('店舗情報が存在しません');
+    }
+
     setShowActivateModal(false);
     setIsSaving(true);
     try {
       const updateData = {
         subscription_plan_id: formData.subscription_plan_id,
         plan_started_at: new Date().toISOString(),
-        plan_expires_at: null,
-        priority_score: formData.subscription_plan_id
+        plan_expires_at: null
       };
 
       const response = await fetch(`/api/stores/${store.id}`, {
@@ -829,14 +799,15 @@ function AdminStoreEditPageContent({ params }: PageProps) {
 
   // プラン解約確定処理
   const confirmCancelPlan = async () => {
+    if (!store) return;
+
     setShowCancelModal(false);
     setIsSaving(true);
     try {
       const updateData = {
         subscription_plan_id: 0,
         plan_started_at: null,
-        plan_expires_at: null,
-        priority_score: 0
+        plan_expires_at: null
       };
 
       const response = await fetch(`/api/stores/${store.id}`, {
@@ -2431,7 +2402,7 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                         const icon = getPlanIcon(plan.name);
                         const colors = getPlanColors(plan.name);
                         const priceDisplay = formatPrice(plan.price);
-                        const isSelected = formData.priority_score === plan.id;
+                        const isSelected = formData.subscription_plan_id === Number(plan.id);
 
                         // プランが適用済みかチェック（plan_started_atが設定されている）
                         const isPlanActive = (
@@ -2453,8 +2424,7 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                               // プラン選択のみ（適用開始はボタンで行う）
                               setFormData(prev => ({
                                 ...prev,
-                                subscription_plan_id: plan.id,
-                                priority_score: plan.id,
+                                subscription_plan_id: Number(plan.id),
                               }));
                             }}
                           >
@@ -2474,7 +2444,7 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                                 <li>• {plan.description}</li>
                               </ul>
                             )}
-                            {formData.priority_score === plan.id && formData.plan_started_at && (
+                            {formData.subscription_plan_id === Number(plan.id) && formData.plan_started_at && (
                               <div className="mt-3 pt-3 border-t text-xs text-gray-600 space-y-1">
                                 <div className="flex justify-between">
                                   <span>開始:</span>
@@ -2532,9 +2502,9 @@ function AdminStoreEditPageContent({ params }: PageProps) {
 
                       {/* 解約ボタン */}
                       {(
-                        typeof formData.priority_score !== 'undefined' &&
-                        formData.priority_score !== null &&
-                        formData.priority_score !== 0 &&
+                        typeof formData.subscription_plan_id !== 'undefined' &&
+                        formData.subscription_plan_id !== null &&
+                        formData.subscription_plan_id !== 0 &&
                         typeof formData.plan_started_at !== 'undefined' &&
                         formData.plan_started_at !== null &&
                         formData.plan_started_at !== ''
@@ -2568,24 +2538,6 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                       この情報は管理用で、ユーザーには表示されません
                     </p>
                   </div>
-
-                  {/* 設定情報 */}
-                  {formData.recommended_at && (
-                    <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">設定日時:</span>
-                        <span className="text-gray-900">
-                          {new Date(formData.recommended_at).toLocaleString('ja-JP')}
-                        </span>
-                      </div>
-                      {formData.recommended_by && (
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-500">設定者:</span>
-                          <span className="text-gray-900">{formData.recommended_by}</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
 
                 </div>
               </div>
@@ -2630,8 +2582,8 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                   <div>
                     <p className="text-sm text-gray-500 mb-1">適用プラン</p>
                     <p className="font-medium text-gray-900">
-                      {subscriptionPlans.find((plan) => plan.id === formData.subscription_plan_id)
-                        ? subscriptionPlans.find((plan) => plan.id === formData.subscription_plan_id).display_name
+                      {subscriptionPlans.find((plan) => Number(plan.id) === formData.subscription_plan_id)
+                        ? subscriptionPlans.find((plan) => Number(plan.id) === formData.subscription_plan_id)?.display_name
                         : '不明'}
                     </p>
                   </div>
@@ -2705,8 +2657,8 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                   <div>
                     <p className="text-sm text-gray-500 mb-1">現在のプラン</p>
                     <p className="font-medium text-gray-900">
-                      {subscriptionPlans.find((plan) => plan.id === formData.subscription_plan_id)
-                        ? subscriptionPlans.find((plan) => plan.id === formData.subscription_plan_id).display_name
+                      {subscriptionPlans.find((plan) => Number(plan.id) === formData.subscription_plan_id)
+                        ? subscriptionPlans.find((plan) => Number(plan.id) === formData.subscription_plan_id)?.display_name
                         : '不明'}
                     </p>
                   </div>

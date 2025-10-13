@@ -105,10 +105,7 @@ export async function PATCH(
       'maximum_hourly_wage',
       'recruitment_status',
       'recruitment_message',
-      'priority_score',
       'recommendation_reason',
-      'recommended_at',
-      'recommended_by',
       // 立地・アクセスフィールド
       'station',
       'station_line',

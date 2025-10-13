@@ -26,6 +26,7 @@ export async function GET(request: NextRequest) {
     const genre = searchParams.get('genre') || '';
     const showInactive = searchParams.get('showInactive') === 'true';
     const plan = searchParams.get('plan') || 'all';
+    const expired = searchParams.get('expired') === 'true';
     const offset = (page - 1) * limit;
 
     // 基本クエリを構築
@@ -52,10 +53,20 @@ export async function GET(request: NextRequest) {
       dataQuery = dataQuery.eq('station', area);
     }
 
-    // ジャンルフィルタ
+    // ジャンルフィルタ（genres.nameでフィルタ）
     if (genre) {
-      countQuery = countQuery.eq('genre', genre);
-      dataQuery = dataQuery.eq('genre', genre);
+      // countQueryはJOINしていないため、genre_idで絞り込む必要がある
+      // まずgenre名からIDを取得
+      const { data: genreData } = await supabaseAdmin
+        .from('genres')
+        .select('id')
+        .eq('name', genre)
+        .single();
+
+      if (genreData) {
+        countQuery = countQuery.eq('genre_id', genreData.id);
+        dataQuery = dataQuery.eq('genre_id', genreData.id);
+      }
     }
 
     // アクティブ状態フィルタ（showInactiveがfalseの場合のみアクティブな店舗を表示）
@@ -64,24 +75,34 @@ export async function GET(request: NextRequest) {
       dataQuery = dataQuery.eq('is_active', true);
     }
 
-    // プランフィルタ（priority_scoreで絞り込み）
+    // プランフィルタ（subscription_plan_idで絞り込み）
     if (plan !== 'all') {
-      let priorityScore: number;
-      if (plan === 'free') {
-        priorityScore = 0;
-      } else if (plan === 'basic') {
-        priorityScore = 2;
-      } else if (plan === 'standard') {
-        priorityScore = 3;
-      } else if (plan === 'advanced') {
-        priorityScore = 4;
-      } else if (plan === 'premium') {
-        priorityScore = 5;
-      } else {
-        priorityScore = 0; // デフォルトはFree
-      }
-      countQuery = countQuery.eq('priority_score', priorityScore);
-      dataQuery = dataQuery.eq('priority_score', priorityScore);
+      // プラン名からsubscription_plan_idへのマッピング
+      const planIdMapping: Record<string, number> = {
+        'free': 0,
+        'light': 1,
+        'basic': 2,
+        'premium5': 3,
+        'premium10': 4,
+        'premium15': 5
+      };
+
+      const subscriptionPlanId = planIdMapping[plan] ?? 0; // デフォルトはFree
+      countQuery = countQuery.eq('subscription_plan_id', subscriptionPlanId);
+      dataQuery = dataQuery.eq('subscription_plan_id', subscriptionPlanId);
+    }
+
+    // 期限切れフィルタ
+    if (expired) {
+      const now = new Date().toISOString();
+      countQuery = countQuery
+        .neq('subscription_plan_id', 0)
+        .not('plan_expires_at', 'is', null)
+        .lt('plan_expires_at', now);
+      dataQuery = dataQuery
+        .neq('subscription_plan_id', 0)
+        .not('plan_expires_at', 'is', null)
+        .lt('plan_expires_at', now);
     }
 
     // 総数を取得

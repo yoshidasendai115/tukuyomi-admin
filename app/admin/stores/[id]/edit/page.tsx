@@ -665,6 +665,12 @@ function AdminStoreEditPageContent({ params }: PageProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // バリデーション: 店舗説明の文字数チェック
+    if (formData.description && formData.description.length > 30) {
+      alert(`店舗説明は30文字以内で入力してください。\n現在: ${formData.description.length}文字（${formData.description.length - 30}文字オーバー）`);
+      return;
+    }
+
     setIsSaving(true);
 
     try {
@@ -1035,6 +1041,15 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         placeholder="店舗の特徴や魅力を記入"
                       />
+                      <p className={`mt-1 text-xs ${
+                        (formData.description || '').length > 30
+                          ? 'text-red-600 font-semibold'
+                          : 'text-gray-500'
+                      }`}>
+                        {(formData.description || '').length > 30
+                          ? `(-${(formData.description || '').length - 30})`
+                          : `${(formData.description || '').length}/30文字`}
+                      </p>
                     </div>
 
                     <div>

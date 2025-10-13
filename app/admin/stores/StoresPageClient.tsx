@@ -70,6 +70,7 @@ export default function StoresPageClient() {
   const [selectedArea, setSelectedArea] = useState(searchParams.get('area') || '');
   const [selectedGenre, setSelectedGenre] = useState(searchParams.get('genre') || '');
   const [showInactive, setShowInactive] = useState(searchParams.get('showInactive') === 'true');
+  const [showExpired, setShowExpired] = useState(searchParams.get('expired') === 'true');
   const [selectedPlan, setSelectedPlan] = useState<string>(searchParams.get('plan') || 'all');
   const [areaInput, setAreaInput] = useState(searchParams.get('area') || '');
   const [showAreaSuggestions, setShowAreaSuggestions] = useState(false);
@@ -141,7 +142,7 @@ export default function StoresPageClient() {
 
   useEffect(() => {
     fetchData();
-  }, [currentPage, searchTerm, selectedArea, selectedGenre, showInactive, selectedPlan]);
+  }, [currentPage, searchTerm, selectedArea, selectedGenre, showInactive, showExpired, selectedPlan]);
 
   // フィルター変更時にURLパラメータを更新
   useEffect(() => {
@@ -151,12 +152,13 @@ export default function StoresPageClient() {
     if (selectedArea) params.set('area', selectedArea);
     if (selectedGenre) params.set('genre', selectedGenre);
     if (showInactive) params.set('showInactive', 'true');
+    if (showExpired) params.set('expired', 'true');
     if (selectedPlan !== 'all') params.set('plan', selectedPlan);
     if (currentPage > 1) params.set('page', currentPage.toString());
 
     const newUrl = `${window.location.pathname}?${params.toString()}`;
     router.replace(newUrl);
-  }, [searchTerm, selectedArea, selectedGenre, showInactive, selectedPlan, currentPage, router]);
+  }, [searchTerm, selectedArea, selectedGenre, showInactive, showExpired, selectedPlan, currentPage, router]);
 
   useEffect(() => {
     // 検索条件が変更されたらページをリセット
@@ -180,6 +182,7 @@ export default function StoresPageClient() {
         area: selectedArea,
         genre: selectedGenre,
         showInactive: showInactive.toString(),
+        expired: showExpired.toString(),
         plan: selectedPlan
       });
 
@@ -303,10 +306,11 @@ export default function StoresPageClient() {
     if (selectedArea) params.set('area', selectedArea);
     if (selectedGenre) params.set('genre', selectedGenre);
     if (showInactive) params.set('showInactive', 'true');
+    if (showExpired) params.set('expired', 'true');
     if (selectedPlan !== 'all') params.set('plan', selectedPlan);
     if (currentPage > 1) params.set('page', currentPage.toString());
     return params.toString();
-  }, [searchTerm, selectedArea, selectedGenre, showInactive, selectedPlan, currentPage]);
+  }, [searchTerm, selectedArea, selectedGenre, showInactive, showExpired, selectedPlan, currentPage]);
 
   const handleRecommendUpdate = async (storeId: string, isRecommended: boolean, score: number, reason: string) => {
     try {
@@ -526,17 +530,31 @@ export default function StoresPageClient() {
             </div>
 
             <div className="flex items-end min-w-[180px]">
-              <div className="flex items-center h-10">
-                <input
-                  type="checkbox"
-                  id="show-inactive"
-                  checked={showInactive}
-                  onChange={(e) => setShowInactive(e.target.checked)}
-                  className="mr-2"
-                />
-                <label htmlFor="show-inactive" className="text-sm text-gray-700">
-                  無効な店舗も表示
-                </label>
+              <div className="flex flex-col space-y-2">
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="show-inactive"
+                    checked={showInactive}
+                    onChange={(e) => setShowInactive(e.target.checked)}
+                    className="mr-2"
+                  />
+                  <label htmlFor="show-inactive" className="text-sm text-gray-700">
+                    無効な店舗も表示
+                  </label>
+                </div>
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="show-expired"
+                    checked={showExpired}
+                    onChange={(e) => setShowExpired(e.target.checked)}
+                    className="mr-2"
+                  />
+                  <label htmlFor="show-expired" className="text-sm text-gray-700">
+                    プラン期限切れのみ
+                  </label>
+                </div>
               </div>
             </div>
           </div>

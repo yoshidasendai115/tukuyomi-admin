@@ -226,82 +226,61 @@ export default function AdminDashboardPage() {
       {/* メインコンテンツ */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* 統計カード */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-3 bg-yellow-100 rounded-lg">
-                <svg className="h-8 w-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+        <div className="bg-white rounded-lg shadow p-4 mb-4">
+          <h3 className="text-sm font-medium text-gray-500 mb-3">システム統計</h3>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <div className="p-2 bg-yellow-100 rounded-lg">
+                <span className="text-xl">⏳</span>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">未処理申請</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.pendingRequests}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-3 bg-red-100 rounded-lg">
-                <svg className="h-8 w-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">未対応通報</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.pendingReviewReports}</p>
+              <div>
+                <p className="text-xs text-gray-500">未処理申請</p>
+                <p className="text-lg font-bold text-gray-900">{stats.pendingRequests}</p>
               </div>
             </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-3 bg-green-100 rounded-lg">
-                <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+            <div className="flex items-center space-x-2">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <span className="text-xl">⚠️</span>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">承認済み申請</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.approvedRequests}</p>
+              <div>
+                <p className="text-xs text-gray-500">未対応通報</p>
+                <p className="text-lg font-bold text-gray-900">{stats.pendingReviewReports}</p>
               </div>
             </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-3 bg-purple-100 rounded-lg">
-                <svg className="h-8 w-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
+            <div className="flex items-center space-x-2">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <span className="text-xl">✅</span>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">総店舗数</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalStores}</p>
+              <div>
+                <p className="text-xs text-gray-500">承認済み申請</p>
+                <p className="text-lg font-bold text-gray-900">{stats.approvedRequests}</p>
               </div>
             </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-3 bg-orange-100 rounded-lg">
-                <svg className="h-8 w-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+            <div className="flex items-center space-x-2">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <span className="text-xl">🏪</span>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">プラン期限切れ</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.expiredStores}</p>
+              <div>
+                <p className="text-xs text-gray-500">総店舗数</p>
+                <p className="text-lg font-bold text-gray-900">{stats.totalStores}</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="p-2 bg-orange-100 rounded-lg">
+                <span className="text-xl">⏰</span>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">プラン期限切れ</p>
+                <p className="text-lg font-bold text-gray-900">{stats.expiredStores}</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* プラン別統計カード（1行表示） */}
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <h3 className="text-sm font-medium text-gray-500 mb-4">プラン別店舗数</h3>
-          <div className="flex items-center justify-between space-x-4">
+        {/* プラン別統計カード（コンパクト表示） */}
+        <div className="bg-white rounded-lg shadow p-4 mb-4">
+          <h3 className="text-sm font-medium text-gray-500 mb-3">プラン別店舗数</h3>
+          <div className="flex items-center justify-between">
             {stats.planStats.map((plan) => (
               <div key={plan.planId} className="flex items-center space-x-2">
                 <div className={`p-2 ${plan.bgColor} rounded-lg`}>
@@ -317,9 +296,9 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* 店舗ユーザー管理 */}
-        <div className="mb-8">
+        <div className="mb-4">
           <h2 className="text-lg font-semibold text-gray-700 mb-4">店舗ユーザー管理</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <Link
               href="/admin/requests"
               className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow"
@@ -349,9 +328,9 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* システム管理 */}
-        <div className="mb-8">
+        <div className="mb-4">
           <h2 className="text-lg font-semibold text-gray-700 mb-4">システム管理</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <Link
               href="/admin/stores"
               className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow"
@@ -407,9 +386,9 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* 駅関連管理 */}
-        <div className="mb-8">
+        <div className="mb-4">
           <h2 className="text-lg font-semibold text-gray-700 mb-4">駅関連管理</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <Link
               href="/admin/masters/stations"
               className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow"
@@ -441,7 +420,7 @@ export default function AdminDashboardPage() {
         {/* マスタデータ管理 */}
         <div>
           <h2 className="text-lg font-semibold text-gray-700 mb-4">マスタデータ管理</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <Link
               href="/admin/genres"
               className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow"

@@ -211,6 +211,12 @@ function AdminStoreEditPageContent({ params }: PageProps) {
   const [userRole, setUserRole] = useState<string>('');
   const isStoreOwner = userRole === 'store_owner';
 
+  // Freeプラン判定ヘルパー関数
+  const isFreeplan = (): boolean => {
+    // subscription_plan_id が 1 (Free) の場合true
+    return formData.subscription_plan_id === 1;
+  };
+
   // プラン期限切れ判定ヘルパー関数
   const isPlanExpired = (formData: Partial<Store>): boolean => {
     if (
@@ -666,6 +672,11 @@ function AdminStoreEditPageContent({ params }: PageProps) {
 
       // subscription_plan_idに基づいてis_recommendedを自動設定
       updatedFormData.is_recommended = (formData.subscription_plan_id === 3 || formData.subscription_plan_id === 5);
+
+      // Freeプランの場合、追加画像をクリア
+      if (isFreeplan()) {
+        updatedFormData.additional_images = [];
+      }
 
       // メイン画像のアップロード
       if (mainImageFile) {
@@ -1629,34 +1640,46 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    追加画像（最大3枚）
-                  </label>
-                  <div className="space-y-3">
-                    {[0, 1, 2].map((index) => (
-                      <div key={index} className="flex items-start space-x-4">
-                        {additionalImagePreviews[index] && (
-                          <div className="relative w-32 h-32">
-                            <img
-                              src={additionalImagePreviews[index]!}
-                              alt={`追加画像${index + 1}`}
-                              className="w-full h-full object-cover rounded-md"
+                {!isFreeplan() && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      追加画像（最大3枚）
+                    </label>
+                    <div className="space-y-3">
+                      {[0, 1, 2].map((index) => (
+                        <div key={index} className="flex items-start space-x-4">
+                          {additionalImagePreviews[index] && (
+                            <div className="relative w-32 h-32">
+                              <img
+                                src={additionalImagePreviews[index]!}
+                                alt={`追加画像${index + 1}`}
+                                className="w-full h-full object-cover rounded-md"
+                              />
+                            </div>
+                          )}
+                          <div className="flex-1">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => handleAdditionalImageChange(index, e)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                             />
                           </div>
-                        )}
-                        <div className="flex-1">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => handleAdditionalImageChange(index, e)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                          />
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
+
+                {isFreeplan() && (
+                  <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
+                    <p className="text-sm text-blue-700">
+                      💵 <strong>Freeプラン</strong>ではメイン画像のみアップロード可能です。
+                      <br />
+                      追加画像をアップロードするには、有料プランへのアップグレードが必要です。
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 

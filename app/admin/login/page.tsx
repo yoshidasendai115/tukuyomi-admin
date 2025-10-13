@@ -180,7 +180,7 @@ export default function AdminLoginPage() {
 
         <div className="mt-4 text-center">
           <p className="text-xs text-gray-500">
-            © 2024 Tukuyomi. All rights reserved.
+            © 2025 Garunavi. All rights reserved.
           </p>
         </div>
       </div>

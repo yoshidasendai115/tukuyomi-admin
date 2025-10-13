@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Tukuyomi Admin System",
+  title: process.env.NEXT_PUBLIC_APP_NAME || "Tukuyomi Admin System",
   description: "店舗管理システム",
 };
 

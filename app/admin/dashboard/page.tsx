@@ -198,7 +198,7 @@ export default function AdminDashboardPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Tukuyomi Admin</h1>
+              <h1 className="text-2xl font-bold text-gray-900">{process.env.NEXT_PUBLIC_APP_NAME || 'Tukuyomi Admin'}</h1>
               <p className="text-sm text-gray-600">管理者ダッシュボード</p>
             </div>
             <div className="flex items-center space-x-4">

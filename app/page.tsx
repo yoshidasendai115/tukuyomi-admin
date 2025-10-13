@@ -7,7 +7,7 @@ export default function HomePage() {
         <div className="bg-white rounded-lg shadow-md p-8">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900">
-              Tukuyomi Admin System
+              {process.env.NEXT_PUBLIC_APP_NAME || 'Tukuyomi Admin System'}
             </h1>
             <p className="mt-2 text-sm text-gray-600">
               管理者専用システム

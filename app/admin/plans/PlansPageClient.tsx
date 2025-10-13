@@ -325,7 +325,7 @@ export default function PlansPageClient() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-bold text-gray-700 mb-1">
                       プラン名（システム内部用）<span className="text-red-500">*</span>
                     </label>
                     <input
@@ -339,7 +339,7 @@ export default function PlansPageClient() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-bold text-gray-700 mb-1">
                       表示名<span className="text-red-500">*</span>
                     </label>
                     <input
@@ -355,7 +355,7 @@ export default function PlansPageClient() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-bold text-gray-700 mb-1">
                       月額料金（円）<span className="text-red-500">*</span>
                     </label>
                     <input
@@ -369,7 +369,7 @@ export default function PlansPageClient() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-bold text-gray-700 mb-1">
                       表示順
                     </label>
                     <input
@@ -383,7 +383,7 @@ export default function PlansPageClient() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-bold text-gray-700 mb-1">
                     プラン説明
                   </label>
                   <textarea

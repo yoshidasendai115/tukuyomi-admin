@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
 import { SessionData } from '@/lib/auth';
 
 // Note: このページはMiddlewareでstore_ownerのアクセスをブロック済み
@@ -107,28 +106,12 @@ export default function AdminDashboardPage() {
 
   const fetchDashboardStats = async () => {
     try {
-      // 申請統計
-      const { data: pendingData } = await supabase
-        .from('admin_store_edit_requests')
-        .select('id', { count: 'exact' })
-        .eq('status', 'pending');
+      const response = await fetch('/api/admin/dashboard-stats');
+      if (!response.ok) {
+        throw new Error('Failed to fetch dashboard stats');
+      }
 
-      const { data: approvedData } = await supabase
-        .from('admin_store_edit_requests')
-        .select('id', { count: 'exact' })
-        .eq('status', 'approved');
-
-      // 店舗数
-      const { data: storeData } = await supabase
-        .from('stores')
-        .select('id', { count: 'exact' });
-
-      // subscription_plansテーブルから全プラン取得
-      const { data: plansData } = await supabase
-        .from('subscription_plans')
-        .select('id, name, display_name, features')
-        .eq('is_active', true)
-        .order('display_order', { ascending: true });
+      const data = await response.json();
 
       // アイコンと背景色のマッピング
       const planIconMap: Record<string, { icon: string; bgColor: string }> = {
@@ -140,39 +123,22 @@ export default function AdminDashboardPage() {
         'premium15': { icon: '👑', bgColor: 'bg-purple-100' },
       };
 
-      // 各プランの店舗数を取得
-      const planStats: PlanStat[] = await Promise.all(
-        (plansData || []).map(async (plan) => {
-          const { count } = await supabase
-            .from('stores')
-            .select('id', { count: 'exact', head: true })
-            .eq('subscription_plan_id', plan.id);
-
-          const iconConfig = planIconMap[plan.name] || { icon: '📦', bgColor: 'bg-gray-100' };
-
-          return {
-            planId: plan.id,
-            planName: plan.name,
-            displayName: plan.display_name,
-            count: count || 0,
-            icon: iconConfig.icon,
-            bgColor: iconConfig.bgColor,
-          };
-        })
-      );
-
-      // 口コミ通報の未対応件数
-      const { data: reviewReportsData } = await supabase
-        .from('review_reports')
-        .select('id', { count: 'exact' })
-        .eq('status', 'pending');
+      // プラン統計にアイコンと背景色を追加
+      const planStatsWithIcons: PlanStat[] = data.planStats.map((plan: { planId: string; planName: string; displayName: string; count: number }) => {
+        const iconConfig = planIconMap[plan.planName] || { icon: '📦', bgColor: 'bg-gray-100' };
+        return {
+          ...plan,
+          icon: iconConfig.icon,
+          bgColor: iconConfig.bgColor,
+        };
+      });
 
       setStats({
-        pendingRequests: pendingData?.length || 0,
-        approvedRequests: approvedData?.length || 0,
-        totalStores: storeData?.length || 0,
-        planStats,
-        pendingReviewReports: reviewReportsData?.length || 0
+        pendingRequests: data.pendingRequests,
+        approvedRequests: data.approvedRequests,
+        totalStores: data.totalStores,
+        planStats: planStatsWithIcons,
+        pendingReviewReports: data.pendingReviewReports
       });
     } catch (error) {
       console.error('Error fetching stats:', error);

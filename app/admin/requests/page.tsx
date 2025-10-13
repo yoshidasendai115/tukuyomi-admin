@@ -679,11 +679,11 @@ export default function AdminRequestsPage() {
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">店舗名</label>
+                    <label className="block text-sm font-bold text-gray-700">店舗名</label>
                     <p className="mt-1 text-sm text-gray-900">{selectedRequest.store_name}</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">業態</label>
+                    <label className="block text-sm font-bold text-gray-700">業態</label>
                     <p className="mt-1 text-sm text-gray-900">
                       <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
                         {getGenreName(selectedRequest.genre_id)}
@@ -691,11 +691,11 @@ export default function AdminRequestsPage() {
                     </p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">電話番号</label>
+                    <label className="block text-sm font-bold text-gray-700">電話番号</label>
                     <p className="mt-1 text-sm text-gray-900">{selectedRequest.store_phone}</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">住所</label>
+                    <label className="block text-sm font-bold text-gray-700">住所</label>
                     <p className="mt-1 text-sm text-gray-900">{selectedRequest.store_address}</p>
                   </div>
                 </div>
@@ -703,19 +703,19 @@ export default function AdminRequestsPage() {
                 <div className="border-t pt-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">申請者名</label>
+                      <label className="block text-sm font-bold text-gray-700">申請者名</label>
                       <p className="mt-1 text-sm text-gray-900">{selectedRequest.applicant_name}</p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">役職</label>
+                      <label className="block text-sm font-bold text-gray-700">役職</label>
                       <p className="mt-1 text-sm text-gray-900">{selectedRequest.applicant_role}</p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">メールアドレス</label>
+                      <label className="block text-sm font-bold text-gray-700">メールアドレス</label>
                       <p className="mt-1 text-sm text-gray-900">{selectedRequest.applicant_email}</p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">電話番号</label>
+                      <label className="block text-sm font-bold text-gray-700">電話番号</label>
                       <p className="mt-1 text-sm text-gray-900">{selectedRequest.applicant_phone}</p>
                     </div>
                   </div>
@@ -728,11 +728,11 @@ export default function AdminRequestsPage() {
                   {/* 許可証名義人情報 */}
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">許可証名義人</label>
+                      <label className="block text-sm font-bold text-gray-700">許可証名義人</label>
                       <p className="mt-1 text-sm text-gray-900">{selectedRequest.license_holder_name || selectedRequest.applicant_name}</p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">申請者との関係</label>
+                      <label className="block text-sm font-bold text-gray-700">申請者との関係</label>
                       <p className="mt-1 text-sm text-gray-900">
                         {selectedRequest.applicant_relationship === 'owner' ? '所有者' :
                          selectedRequest.applicant_relationship === 'manager' ? '管理者' :
@@ -744,7 +744,7 @@ export default function AdminRequestsPage() {
 
                   {/* 飲食店営業許可証 */}
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">飲食店営業許可証（必須）</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">飲食店営業許可証（必須）</label>
                     {selectedRequest.business_license_image ? (
                       <div className="flex items-center space-x-4">
                         {selectedRequest.business_license_image.toLowerCase().endsWith('.pdf') ? (
@@ -818,7 +818,7 @@ export default function AdminRequestsPage() {
                   {/* 身分証明書 */}
                   {selectedRequest.identity_document_image && (
                     <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">身分証明書</label>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">身分証明書</label>
                       <div className="flex items-center space-x-4">
                         {selectedRequest.identity_document_image!.toLowerCase().endsWith('.pdf') ? (
                           <div className="flex items-center space-x-2 p-3 border rounded bg-gray-50">
@@ -849,7 +849,7 @@ export default function AdminRequestsPage() {
 
                   {/* 書類確認ステータス */}
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">書類確認ステータス</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">書類確認ステータス</label>
                     <div className="flex items-center space-x-4">
                       {getVerificationBadge(selectedRequest.document_verification_status || 'pending')}
                       {selectedRequest.document_verification_status === 'pending' && (
@@ -882,7 +882,7 @@ export default function AdminRequestsPage() {
 
                 {selectedRequest.additional_info && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">補足事項</label>
+                    <label className="block text-sm font-bold text-gray-700">補足事項</label>
                     <p className="mt-1 text-sm text-gray-900">{selectedRequest.additional_info}</p>
                   </div>
                 )}
@@ -890,7 +890,7 @@ export default function AdminRequestsPage() {
                 {selectedRequest.status === 'pending' && (
                   <>
                     <div className="border-t pt-4">
-                      <label className="block text-sm font-medium text-gray-700">管理者メモ</label>
+                      <label className="block text-sm font-bold text-gray-700">管理者メモ</label>
                       <textarea
                         value={adminNotes}
                         onChange={(e) => setAdminNotes(e.target.value)}
@@ -935,7 +935,7 @@ export default function AdminRequestsPage() {
                     <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
                       <div className="space-y-3">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700">ログインURL</label>
+                          <label className="block text-sm font-bold text-gray-700">ログインURL</label>
                           <div className="mt-1 flex items-center space-x-2">
                             <input
                               type="text"
@@ -955,11 +955,11 @@ export default function AdminRequestsPage() {
                           </div>
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700">メールアドレス（ログインID）</label>
+                          <label className="block text-sm font-bold text-gray-700">メールアドレス（ログインID）</label>
                           <p className="mt-1 text-sm text-gray-900">{selectedRequest.applicant_email}</p>
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700">パスワード</label>
+                          <label className="block text-sm font-bold text-gray-700">パスワード</label>
                           <div className="mt-1 flex items-center space-x-2">
                             <div className="relative flex-1">
                               <input
@@ -1067,36 +1067,36 @@ export default function AdminRequestsPage() {
                   <h3 className="text-lg font-semibold mb-4 text-blue-800">📝 申請内容</h3>
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">店舗名</label>
+                      <label className="block text-sm font-bold text-gray-700">店舗名</label>
                       <p className="text-sm text-gray-900">{selectedRequest.store_name}</p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">住所</label>
+                      <label className="block text-sm font-bold text-gray-700">住所</label>
                       <p className="text-sm text-gray-900">{selectedRequest.store_address}</p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">電話番号</label>
+                      <label className="block text-sm font-bold text-gray-700">電話番号</label>
                       <p className="text-sm text-gray-900">{selectedRequest.store_phone}</p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">業態</label>
+                      <label className="block text-sm font-bold text-gray-700">業態</label>
                       <p className="text-sm text-gray-900">{getGenreName(selectedRequest.genre_id)}</p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">申請者</label>
+                      <label className="block text-sm font-bold text-gray-700">申請者</label>
                       <p className="text-sm text-gray-900">{selectedRequest.applicant_name} ({selectedRequest.applicant_role})</p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">申請者メール</label>
+                      <label className="block text-sm font-bold text-gray-700">申請者メール</label>
                       <p className="text-sm text-gray-900">{selectedRequest.applicant_email}</p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">申請者電話</label>
+                      <label className="block text-sm font-bold text-gray-700">申請者電話</label>
                       <p className="text-sm text-gray-900">{selectedRequest.applicant_phone}</p>
                     </div>
                     {selectedRequest.additional_info && (
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">追加情報</label>
+                        <label className="block text-sm font-bold text-gray-700">追加情報</label>
                         <p className="text-sm text-gray-900">{selectedRequest.additional_info}</p>
                       </div>
                     )}
@@ -1109,36 +1109,36 @@ export default function AdminRequestsPage() {
                   {selectedRequest.related_store ? (
                     <div className="space-y-3">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">店舗名</label>
+                        <label className="block text-sm font-bold text-gray-700">店舗名</label>
                         <p className="text-sm text-gray-900">{selectedRequest.related_store.name}</p>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">住所</label>
+                        <label className="block text-sm font-bold text-gray-700">住所</label>
                         <p className="text-sm text-gray-900">{selectedRequest.related_store.address || '未設定'}</p>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">電話番号</label>
+                        <label className="block text-sm font-bold text-gray-700">電話番号</label>
                         <p className="text-sm text-gray-900">{selectedRequest.related_store.phone_number || '未設定'}</p>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">営業時間</label>
+                        <label className="block text-sm font-bold text-gray-700">営業時間</label>
                         <p className="text-sm text-gray-900">{selectedRequest.related_store.business_hours || '未設定'}</p>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">定休日</label>
+                        <label className="block text-sm font-bold text-gray-700">定休日</label>
                         <p className="text-sm text-gray-900">{selectedRequest.related_store.regular_holiday || '未設定'}</p>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">店舗メール</label>
+                        <label className="block text-sm font-bold text-gray-700">店舗メール</label>
                         <p className="text-sm text-gray-900">{selectedRequest.related_store.email || '未設定'}</p>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">ステータス</label>
+                        <label className="block text-sm font-bold text-gray-700">ステータス</label>
                         <p className="text-sm text-gray-900">{selectedRequest.related_store.is_active ? '✅ アクティブ' : '❌ 非アクティブ'}</p>
                       </div>
                       {selectedRequest.related_store.description && (
                         <div>
-                          <label className="block text-sm font-medium text-gray-700">店舗説明</label>
+                          <label className="block text-sm font-bold text-gray-700">店舗説明</label>
                           <p className="text-sm text-gray-900">{selectedRequest.related_store.description}</p>
                         </div>
                       )}
@@ -1212,21 +1212,21 @@ export default function AdminRequestsPage() {
 
               <div className="space-y-4 mb-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">送信先</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">送信先</label>
                   <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded border">
                     {selectedRequest.applicant_email}
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">件名</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">件名</label>
                   <p className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded border">
                     【つくよみ】店舗編集アカウントのご案内
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">メール本文</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">メール本文</label>
                   <div className="bg-gray-50 px-4 py-3 rounded border text-sm text-gray-900 space-y-3">
                     <p>{selectedRequest.applicant_name} 様</p>
 

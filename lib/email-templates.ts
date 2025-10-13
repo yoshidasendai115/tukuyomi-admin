@@ -10,6 +10,13 @@ export type EmailTemplate = {
 };
 
 /**
+ * 環境変数から値を取得するヘルパー関数
+ */
+const getAppName = () => process.env.APP_NAME || 'つくよみ';
+const getFromName = () => process.env.EMAIL_FROM_NAME || 'つくよみ運営チーム';
+const getSupportEmail = () => process.env.EMAIL_SUPPORT || 'support@garunavi.jp';
+
+/**
  * 店舗申請承認メールテンプレート
  */
 export const storeApprovalEmail = (params: {
@@ -20,9 +27,12 @@ export const storeApprovalEmail = (params: {
   loginUrl: string;
 }): EmailTemplate => {
   const { storeName, storeAddress, loginId, temporaryPassword, loginUrl } = params;
+  const appName = getAppName();
+  const fromName = getFromName();
+  const supportEmail = getSupportEmail();
 
   return {
-    subject: `【つくよみ】店舗申請が承認されました - ${storeName}`,
+    subject: `【${appName}】店舗申請が承認されました - ${storeName}`,
     html: `
 <!DOCTYPE html>
 <html lang="ja">
@@ -35,7 +45,7 @@ export const storeApprovalEmail = (params: {
   <div style="background-color: #f8f9fa; border-radius: 8px; padding: 30px; margin-bottom: 20px;">
     <h1 style="color: #2c3e50; margin-top: 0; font-size: 24px;">店舗申請承認のお知らせ</h1>
     <p style="font-size: 16px; margin-bottom: 20px;">
-      この度は「つくよみ」に店舗登録をご申請いただき、誠にありがとうございます。
+      この度は「${appName}」に店舗登録をご申請いただき、誠にありがとうございます。
     </p>
     <p style="font-size: 16px; margin-bottom: 20px;">
       申請内容を確認させていただき、下記の店舗情報で承認いたしましたのでご連絡いたします。
@@ -98,17 +108,17 @@ export const storeApprovalEmail = (params: {
   <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e1e8ed; font-size: 14px; color: #7f8c8d; text-align: center;">
     <p style="margin: 0 0 5px 0;">このメールに心当たりがない場合は、お手数ですが削除してください。</p>
     <p style="margin: 0;">
-      <strong>つくよみ運営チーム</strong><br>
-      Email: support@garunavi.jp
+      <strong>${fromName}</strong><br>
+      Email: ${supportEmail}
     </p>
   </div>
 </body>
 </html>
     `,
     text: `
-【つくよみ】店舗申請が承認されました
+【${appName}】店舗申請が承認されました
 
-この度は「つくよみ」に店舗登録をご申請いただき、誠にありがとうございます。
+この度は「${appName}」に店舗登録をご申請いただき、誠にありがとうございます。
 申請内容を確認させていただき、下記の店舗情報で承認いたしましたのでご連絡いたします。
 
 ━━━━━━━━━━━━━━━━━━━━━━
@@ -138,8 +148,8 @@ export const storeApprovalEmail = (params: {
 このメールに心当たりがない場合は、お手数ですが削除してください。
 
 ━━━━━━━━━━━━━━━━━━━━━━
-つくよみ運営チーム
-Email: support@garunavi.jp
+${fromName}
+Email: ${supportEmail}
 ━━━━━━━━━━━━━━━━━━━━━━
     `,
   };
@@ -154,9 +164,12 @@ export const passwordResetEmail = (params: {
   expiryMinutes: number;
 }): EmailTemplate => {
   const { adminName, resetUrl, expiryMinutes } = params;
+  const appName = getAppName();
+  const fromName = getFromName();
+  const supportEmail = getSupportEmail();
 
   return {
-    subject: '【つくよみ】パスワードリセットのご案内',
+    subject: `【${appName}】パスワードリセットのご案内`,
     html: `
 <!DOCTYPE html>
 <html lang="ja">
@@ -207,7 +220,7 @@ export const passwordResetEmail = (params: {
 </html>
     `,
     text: `
-【つくよみ】パスワードリセットのご案内
+【${appName}】パスワードリセットのご案内
 
 ${adminName} 様
 
@@ -224,8 +237,8 @@ ${resetUrl}
 ・リンクの有効期限が切れた場合は、再度リセット手続きを行ってください。
 
 ━━━━━━━━━━━━━━━━━━━━━━
-つくよみ運営チーム
-Email: support@garunavi.jp
+${fromName}
+Email: ${supportEmail}
 ━━━━━━━━━━━━━━━━━━━━━━
     `,
   };
@@ -242,6 +255,9 @@ export const adminAccountCreatedEmail = (params: {
   loginUrl: string;
 }): EmailTemplate => {
   const { adminName, loginId, temporaryPassword, role, loginUrl } = params;
+  const appName = getAppName();
+  const fromName = getFromName();
+  const supportEmail = getSupportEmail();
 
   const roleNames: Record<string, string> = {
     super_admin: 'スーパー管理者',
@@ -252,7 +268,7 @@ export const adminAccountCreatedEmail = (params: {
   const roleName = roleNames[role] || role;
 
   return {
-    subject: '【つくよみ】管理者アカウントが作成されました',
+    subject: `【${appName}】管理者アカウントが作成されました`,
     html: `
 <!DOCTYPE html>
 <html lang="ja">
@@ -268,7 +284,7 @@ export const adminAccountCreatedEmail = (params: {
       ${adminName} 様
     </p>
     <p style="font-size: 16px;">
-      つくよみ管理システムのアカウントが作成されました。
+      ${appName}管理システムのアカウントが作成されました。
     </p>
   </div>
 
@@ -308,19 +324,19 @@ export const adminAccountCreatedEmail = (params: {
   <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e1e8ed; font-size: 14px; color: #7f8c8d; text-align: center;">
     <p style="margin: 0 0 5px 0;">このメールに心当たりがない場合は、お手数ですが削除してください。</p>
     <p style="margin: 0;">
-      <strong>つくよみ運営チーム</strong><br>
-      Email: support@garunavi.jp
+      <strong>${fromName}</strong><br>
+      Email: ${supportEmail}
     </p>
   </div>
 </body>
 </html>
     `,
     text: `
-【つくよみ】管理者アカウント作成のお知らせ
+【${appName}】管理者アカウント作成のお知らせ
 
 ${adminName} 様
 
-つくよみ管理システムのアカウントが作成されました。
+${appName}管理システムのアカウントが作成されました。
 
 ━━━━━━━━━━━━━━━━━━━━━━
 アカウント情報
@@ -337,8 +353,8 @@ ${adminName} 様
 ━━━━━━━━━━━━━━━━━━━━━━
 このメールに心当たりがない場合は、お手数ですが削除してください。
 
-つくよみ運営チーム
-Email: support@garunavi.jp
+${fromName}
+Email: ${supportEmail}
 ━━━━━━━━━━━━━━━━━━━━━━
     `,
   };

@@ -325,13 +325,13 @@ export default function ReviewReportsPage() {
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">通報日時</label>
+                    <label className="block text-sm font-bold text-gray-700">通報日時</label>
                     <p className="mt-1 text-sm text-gray-900">
                       {new Date(selectedReport.created_at).toLocaleString('ja-JP')}
                     </p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">ステータス</label>
+                    <label className="block text-sm font-bold text-gray-700">ステータス</label>
                     <p className="mt-1">
                       <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeColor(selectedReport.status)}`}>
                         {STATUS_LABELS[selectedReport.status]}
@@ -341,7 +341,7 @@ export default function ReviewReportsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">通報理由</label>
+                  <label className="block text-sm font-bold text-gray-700">通報理由</label>
                   <p className="mt-1 text-sm text-gray-900">
                     {REASON_LABELS[selectedReport.reason] || selectedReport.reason}
                   </p>
@@ -349,7 +349,7 @@ export default function ReviewReportsPage() {
 
                 {selectedReport.detail && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">詳細</label>
+                    <label className="block text-sm font-bold text-gray-700">詳細</label>
                     <p className="mt-1 text-sm text-gray-900 whitespace-pre-wrap">
                       {selectedReport.detail}
                     </p>
@@ -359,29 +359,29 @@ export default function ReviewReportsPage() {
                 <hr className="my-4" />
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">対象の口コミ</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">対象の口コミ</label>
                   {selectedReport.review ? (
                     <div className="border border-gray-200 rounded-md p-4 bg-gray-50">
                       <div className="mb-2">
-                        <span className="text-sm font-medium text-gray-700">店舗:</span>{' '}
+                        <span className="text-sm font-bold text-gray-700">店舗:</span>{' '}
                         <span className="text-sm text-gray-900">{selectedReport.review.store?.name || '-'}</span>
                       </div>
                       <div className="mb-2">
-                        <span className="text-sm font-medium text-gray-700">投稿者:</span>{' '}
+                        <span className="text-sm font-bold text-gray-700">投稿者:</span>{' '}
                         <span className="text-sm text-gray-900">
                           {selectedReport.reported_user_name || selectedReport.review.reviewer_nickname || 'ゲスト'}
                         </span>
                       </div>
                       <div className="mb-2">
-                        <span className="text-sm font-medium text-gray-700">評価:</span>{' '}
+                        <span className="text-sm font-bold text-gray-700">評価:</span>{' '}
                         <span className="text-sm text-gray-900">★{selectedReport.review.rating}</span>
                       </div>
                       <div className="mb-2">
-                        <span className="text-sm font-medium text-gray-700">タイトル:</span>{' '}
+                        <span className="text-sm font-bold text-gray-700">タイトル:</span>{' '}
                         <span className="text-sm text-gray-900">{selectedReport.review.title}</span>
                       </div>
                       <div>
-                        <span className="text-sm font-medium text-gray-700">内容:</span>
+                        <span className="text-sm font-bold text-gray-700">内容:</span>
                         <p className="mt-1 text-sm text-gray-900 whitespace-pre-wrap">
                           {selectedReport.review.content}
                         </p>
@@ -394,7 +394,7 @@ export default function ReviewReportsPage() {
 
                 {selectedReport.resolution_note && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">対応メモ</label>
+                    <label className="block text-sm font-bold text-gray-700">対応メモ</label>
                     <p className="mt-1 text-sm text-gray-900 whitespace-pre-wrap">
                       {selectedReport.resolution_note}
                     </p>
@@ -403,7 +403,7 @@ export default function ReviewReportsPage() {
 
                 {selectedReport.resolved_at && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">解決日時</label>
+                    <label className="block text-sm font-bold text-gray-700">解決日時</label>
                     <p className="mt-1 text-sm text-gray-900">
                       {new Date(selectedReport.resolved_at).toLocaleString('ja-JP')}
                     </p>
@@ -443,7 +443,7 @@ export default function ReviewReportsPage() {
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">処理アクション</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">処理アクション</label>
                   <div className="space-y-2">
                     <label className="flex items-center">
                       <input
@@ -494,7 +494,7 @@ export default function ReviewReportsPage() {
                 )}
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">対応メモ</label>
+                  <label className="block text-sm font-bold text-gray-700">対応メモ</label>
                   <textarea
                     value={resolutionNote}
                     onChange={(e) => setResolutionNote(e.target.value)}

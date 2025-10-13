@@ -302,7 +302,7 @@ export default function UsersPage() {
               <div className="space-y-4">
                 {!editingUser && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">
+                    <label className="block text-sm font-bold text-gray-700">
                       ログインID <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -316,7 +316,7 @@ export default function UsersPage() {
                 )}
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-bold text-gray-700">
                     {editingUser ? 'パスワード（変更する場合のみ）' : 'パスワード'}
                     {!editingUser && <span className="text-red-500">*</span>}
                   </label>
@@ -330,7 +330,7 @@ export default function UsersPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-bold text-gray-700">
                     表示名 <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -343,7 +343,7 @@ export default function UsersPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-bold text-gray-700">
                     メールアドレス
                   </label>
                   <input
@@ -355,7 +355,7 @@ export default function UsersPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-bold text-gray-700">
                     権限
                   </label>
                   <select

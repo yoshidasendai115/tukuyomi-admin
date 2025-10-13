@@ -755,7 +755,7 @@ export default function StoresPageClient() {
             </p>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-bold text-gray-700 mb-2">
                 優先度スコア (0-100)
               </label>
               <input
@@ -772,7 +772,7 @@ export default function StoresPageClient() {
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-bold text-gray-700 mb-2">
                 PR理由（任意）
               </label>
               <textarea

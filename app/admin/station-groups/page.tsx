@@ -332,7 +332,7 @@ export default function StationGroupsPage() {
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">
+                    <label className="block text-sm font-bold text-gray-700">
                       グループID <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -347,7 +347,7 @@ export default function StationGroupsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">
+                    <label className="block text-sm font-bold text-gray-700">
                       表示名 <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -362,7 +362,7 @@ export default function StationGroupsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-bold text-gray-700">
                     説明
                   </label>
                   <textarea
@@ -479,17 +479,17 @@ export default function StationGroupsPage() {
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">グループID</label>
+                    <label className="block text-sm font-bold text-gray-700">グループID</label>
                     <p className="mt-1 text-sm text-gray-900">{selectedGroup.name}</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">表示名</label>
+                    <label className="block text-sm font-bold text-gray-700">表示名</label>
                     <p className="mt-1 text-sm text-gray-900">{selectedGroup.display_name}</p>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">ステータス</label>
+                  <label className="block text-sm font-bold text-gray-700">ステータス</label>
                   <p className="mt-1">
                     {selectedGroup.is_major_terminal ? (
                       <span className="px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
@@ -504,7 +504,7 @@ export default function StationGroupsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">説明</label>
+                  <label className="block text-sm font-bold text-gray-700">説明</label>
                   <p className="mt-1 text-sm text-gray-900">{selectedGroup.description || '-'}</p>
                 </div>
 
@@ -528,7 +528,7 @@ export default function StationGroupsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">作成日時</label>
+                  <label className="block text-sm font-bold text-gray-700">作成日時</label>
                   <p className="mt-1 text-sm text-gray-900">
                     {new Date(selectedGroup.created_at).toLocaleString('ja-JP')}
                   </p>

@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
 
     // メール送信
     const { data: emailData, error } = await resend.emails.send({
-      from: 'つくよみ運営チーム <noreply@garunavi.jp>',
+      from: process.env.EMAIL_FROM || 'つくよみ運営チーム <onboarding@resend.dev>',
       to: Array.isArray(to) ? to : [to],
       subject: emailTemplate.subject,
       html: emailTemplate.html,

@@ -355,7 +355,7 @@ export default function NotificationsPage() {
               <form onSubmit={handleSubmit}>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">
+                    <label className="block text-sm font-bold text-gray-700">
                       タイトル <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -367,7 +367,7 @@ export default function NotificationsPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">
+                    <label className="block text-sm font-bold text-gray-700">
                       内容 <span className="text-red-500">*</span>
                     </label>
                     <textarea
@@ -379,7 +379,7 @@ export default function NotificationsPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">タイプ</label>
+                    <label className="block text-sm font-bold text-gray-700">タイプ</label>
                     <select
                       value={formData.type}
                       onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
@@ -392,7 +392,7 @@ export default function NotificationsPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">
+                    <label className="block text-sm font-bold text-gray-700">
                       リンクURL（任意）
                     </label>
                     <input

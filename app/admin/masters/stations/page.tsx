@@ -455,7 +455,7 @@ export default function StationMasterPage() {
               </h2>
               <form onSubmit={handleSubmit}>
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-bold text-gray-700 mb-1">
                     駅名 <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -472,7 +472,7 @@ export default function StationMasterPage() {
                 </div>
 
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-bold text-gray-700 mb-1">
                     所属路線
                   </label>
                   <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-md p-2 bg-white">
@@ -541,7 +541,7 @@ export default function StationMasterPage() {
 
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-bold text-gray-700 mb-1">
                       緯度
                     </label>
                     <input
@@ -553,7 +553,7 @@ export default function StationMasterPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-bold text-gray-700 mb-1">
                       経度
                     </label>
                     <input

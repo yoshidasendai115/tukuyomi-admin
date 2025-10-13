@@ -348,7 +348,7 @@ export default function GenresPage() {
               </h2>
               <form onSubmit={handleSubmit}>
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-bold text-gray-700 mb-1">
                     業態名 <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -362,7 +362,7 @@ export default function GenresPage() {
                 </div>
 
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-bold text-gray-700 mb-1">
                     説明
                   </label>
                   <textarea

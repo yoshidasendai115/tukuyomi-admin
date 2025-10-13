@@ -38,6 +38,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // EMAIL_FROMの確認
+    if (!process.env.EMAIL_FROM) {
+      console.error('[Email Send] EMAIL_FROM is not configured');
+      const appName = process.env.APP_NAME || 'がるなび';
+      return NextResponse.json(
+        { error: `EMAIL_FROM is not configured. Please set it to "${appName} <onboarding@resend.dev>" or verify a domain.` },
+        { status: 500 }
+      );
+    }
+
     // メールテンプレートの選択
     let emailTemplate;
 
@@ -62,7 +72,7 @@ export async function POST(request: NextRequest) {
 
     // メール送信
     const { data: emailData, error } = await resend.emails.send({
-      from: process.env.EMAIL_FROM || 'つくよみ運営チーム <onboarding@resend.dev>',
+      from: process.env.EMAIL_FROM,
       to: Array.isArray(to) ? to : [to],
       subject: emailTemplate.subject,
       html: emailTemplate.html,

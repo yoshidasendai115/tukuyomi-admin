@@ -608,8 +608,18 @@ export default function AdminRequestsPage() {
                     {new Date(request.created_at).toLocaleDateString('ja-JP')}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{request.store_name}</div>
-                    <div className="text-sm text-gray-500">{request.store_address}</div>
+                    <button
+                      onClick={() => {
+                        setSelectedRequest(request);
+                        setShowModal(true);
+                      }}
+                      className="text-left"
+                    >
+                      <div className="text-sm font-medium text-blue-600 hover:text-blue-900 hover:underline cursor-pointer">
+                        {request.store_name}
+                      </div>
+                      <div className="text-sm text-gray-500">{request.store_address}</div>
+                    </button>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">

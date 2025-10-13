@@ -81,7 +81,9 @@ interface Store {
   last_updated_by?: string;
   favorite_count?: number;
   application_count?: number;
-  plan_type?: 'free' | 'basic' | 'premium' | 'enterprise';
+  plan_type?: 'free' | 'light' | 'basic' | 'premium5' | 'premium10' | 'premium15';
+  subscription_plan_id?: number;
+  plan_started_at?: string;
   plan_expires_at?: string;
   max_images_allowed?: number;
   verified_at?: string;
@@ -138,6 +140,10 @@ function AdminStoreEditPageContent({ params }: PageProps) {
   const [store, setStore] = useState<Store | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('basic');
+
+  // プラン操作確認モーダル用の状態
+  const [showActivateModal, setShowActivateModal] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   // メッセージ配信用の状態
   const [favoriteUsers, setFavoriteUsers] = useState<any[]>([]);
@@ -214,6 +220,28 @@ function AdminStoreEditPageContent({ params }: PageProps) {
   // ユーザーロール管理
   const [userRole, setUserRole] = useState<string>('');
   const isStoreOwner = userRole === 'store_owner';
+
+  // プラン期限切れ判定ヘルパー関数
+  const isPlanExpired = (formData: Partial<Store>): boolean => {
+    if (
+      typeof formData.subscription_plan_id === 'undefined' ||
+      formData.subscription_plan_id === null ||
+      formData.subscription_plan_id === 0
+    ) {
+      return false;
+    }
+
+    if (
+      typeof formData.plan_expires_at === 'undefined' ||
+      formData.plan_expires_at === null
+    ) {
+      return false;
+    }
+
+    const now = new Date();
+    const expiresAt = new Date(formData.plan_expires_at);
+    return now > expiresAt;
+  };
 
   useEffect(() => {
     // Paramsを展開
@@ -669,8 +697,8 @@ function AdminStoreEditPageContent({ params }: PageProps) {
     try {
       let updatedFormData = { ...formData };
 
-      // priority_scoreに基づいてis_recommendedを自動設定
-      updatedFormData.is_recommended = (formData.priority_score === 3 || formData.priority_score === 5);
+      // subscription_plan_idに基づいてis_recommendedを自動設定
+      updatedFormData.is_recommended = (formData.subscription_plan_id === 3 || formData.subscription_plan_id === 5);
 
       // メイン画像のアップロード
       if (mainImageFile) {
@@ -740,6 +768,96 @@ function AdminStoreEditPageContent({ params }: PageProps) {
     } catch (error) {
       console.error('Error updating store:', error);
       alert('更新に失敗しました。もう一度お試しください。');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // プラン適用開始ハンドラー（モーダル表示）
+  const handleActivatePlan = () => {
+    if (
+      typeof formData.subscription_plan_id === 'undefined' ||
+      formData.subscription_plan_id === null ||
+      formData.subscription_plan_id === 0
+    ) {
+      alert('プランが選択されていません');
+      return;
+    }
+    setShowActivateModal(true);
+  };
+
+  // プラン適用開始確定処理
+  const confirmActivatePlan = async () => {
+    setShowActivateModal(false);
+    setIsSaving(true);
+    try {
+      const updateData = {
+        subscription_plan_id: formData.subscription_plan_id,
+        plan_started_at: new Date().toISOString(),
+        plan_expires_at: null,
+        priority_score: formData.subscription_plan_id
+      };
+
+      const response = await fetch(`/api/stores/${store.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData),
+      });
+
+      if (response.ok) {
+        alert('プランの適用を開始しました');
+        // データを再読み込み
+        window.location.reload();
+      } else {
+        const error = await response.json();
+        alert(`プラン適用に失敗しました: ${error.message || '不明なエラー'}`);
+      }
+    } catch (error) {
+      console.error('Error activating plan:', error);
+      alert('プラン適用に失敗しました。もう一度お試しください。');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // プラン解約ハンドラー（モーダル表示）
+  const handleCancelPlan = () => {
+    setShowCancelModal(true);
+  };
+
+  // プラン解約確定処理
+  const confirmCancelPlan = async () => {
+    setShowCancelModal(false);
+    setIsSaving(true);
+    try {
+      const updateData = {
+        subscription_plan_id: 0,
+        plan_started_at: null,
+        plan_expires_at: null,
+        priority_score: 0
+      };
+
+      const response = await fetch(`/api/stores/${store.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData),
+      });
+
+      if (response.ok) {
+        alert('プランを解約しました');
+        // データを再読み込み
+        window.location.reload();
+      } else {
+        const error = await response.json();
+        alert(`プラン解約に失敗しました: ${error.message || '不明なエラー'}`);
+      }
+    } catch (error) {
+      console.error('Error canceling plan:', error);
+      alert('プラン解約に失敗しました。もう一度お試しください。');
     } finally {
       setIsSaving(false);
     }
@@ -2204,10 +2322,40 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                 </div>
 
                 <div className="space-y-4">
+                  {/* プラン期限切れ警告 */}
+                  {isPlanExpired(formData) && (
+                    <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
+                      <div className="flex">
+                        <div className="flex-shrink-0">
+                          <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <div className="ml-3">
+                          <h3 className="text-sm font-medium text-red-800">
+                            プランが期限切れです
+                          </h3>
+                          <div className="mt-2 text-sm text-red-700">
+                            <p>
+                              期限: {formData.plan_expires_at && new Date(formData.plan_expires_at).toLocaleDateString('ja-JP', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                              })}
+                            </p>
+                            <p className="mt-1">
+                              現在のプランは無効になっています。新しいプランを設定してください。
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* プラン選択 */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-3">
-                      優先表示プラン
+                      プラン
                     </label>
                     <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
                       {subscriptionPlans.map((plan) => {
@@ -2280,19 +2428,35 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                           return `月${price.toLocaleString()}円`;
                         };
 
-                        const priorityScore = getPriorityScore(plan.name);
                         const icon = getPlanIcon(plan.name);
                         const colors = getPlanColors(plan.name);
                         const priceDisplay = formatPrice(plan.price);
-                        const isSelected = formData.priority_score === priorityScore;
+                        const isSelected = formData.priority_score === plan.id;
+
+                        // プランが適用済みかチェック（plan_started_atが設定されている）
+                        const isPlanActive = (
+                          typeof formData.plan_started_at !== 'undefined' &&
+                          formData.plan_started_at !== null &&
+                          formData.plan_started_at !== ''
+                        );
+                        // 他のプランが適用済みの場合は非活性化
+                        const isDisabled = isPlanActive && !isSelected;
 
                         return (
                           <div
                             key={plan.id}
-                            className={`border-2 rounded-lg p-4 cursor-pointer transition-all relative ${
+                            className={`border-2 rounded-lg p-4 transition-all relative ${
                               isSelected ? colors.active : colors.inactive
-                            }`}
-                            onClick={() => setFormData(prev => ({ ...prev, priority_score: priorityScore }))}
+                            } ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                            onClick={() => {
+                              if (isDisabled) return;
+                              // プラン選択のみ（適用開始はボタンで行う）
+                              setFormData(prev => ({
+                                ...prev,
+                                subscription_plan_id: plan.id,
+                                priority_score: plan.id,
+                              }));
+                            }}
                           >
                             <div className="absolute top-3 right-3">
                               <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
@@ -2310,6 +2474,31 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                                 <li>• {plan.description}</li>
                               </ul>
                             )}
+                            {formData.priority_score === plan.id && formData.plan_started_at && (
+                              <div className="mt-3 pt-3 border-t text-xs text-gray-600 space-y-1">
+                                <div className="flex justify-between">
+                                  <span>開始:</span>
+                                  <span className="font-medium">
+                                    {new Date(formData.plan_started_at).toLocaleDateString('ja-JP')}
+                                  </span>
+                                </div>
+                                {formData.plan_expires_at && (
+                                  <div className="flex justify-between">
+                                    <span>終了:</span>
+                                    <span className={`font-medium ${isPlanExpired(formData) ? 'text-red-600' : 'text-gray-900'}`}>
+                                      {new Date(formData.plan_expires_at).toLocaleDateString('ja-JP')}
+                                      {isPlanExpired(formData) && ' (期限切れ)'}
+                                    </span>
+                                  </div>
+                                )}
+                                {!formData.plan_expires_at && (
+                                  <div className="flex justify-between">
+                                    <span>終了:</span>
+                                    <span className="font-medium text-green-600">無期限</span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         );
                       })}
@@ -2317,6 +2506,49 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                     <p className="mt-3 text-sm text-gray-500">
                       ※ 同じプラン内ではランダムに表示されます
                     </p>
+
+                    {/* プラン適用開始・解約ボタン */}
+                    <div className="mt-6 flex gap-3">
+                      {/* プラン適用開始ボタン */}
+                      {(
+                        typeof formData.subscription_plan_id !== 'undefined' &&
+                        formData.subscription_plan_id !== null &&
+                        formData.subscription_plan_id !== 0 &&
+                        (
+                          typeof formData.plan_started_at === 'undefined' ||
+                          formData.plan_started_at === null ||
+                          formData.plan_started_at === ''
+                        )
+                      ) && (
+                        <button
+                          type="button"
+                          onClick={handleActivatePlan}
+                          disabled={isSaving}
+                          className="flex-1 bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
+                        >
+                          {isSaving ? '処理中...' : 'プラン適用開始'}
+                        </button>
+                      )}
+
+                      {/* 解約ボタン */}
+                      {(
+                        typeof formData.priority_score !== 'undefined' &&
+                        formData.priority_score !== null &&
+                        formData.priority_score !== 0 &&
+                        typeof formData.plan_started_at !== 'undefined' &&
+                        formData.plan_started_at !== null &&
+                        formData.plan_started_at !== ''
+                      ) && (
+                        <button
+                          type="button"
+                          onClick={handleCancelPlan}
+                          disabled={isSaving}
+                          className="flex-1 bg-red-600 text-white px-6 py-3 rounded-md hover:bg-red-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
+                        >
+                          {isSaving ? '処理中...' : 'プランを解約'}
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {/* 内部メモ */}
@@ -2372,6 +2604,156 @@ function AdminStoreEditPageContent({ params }: PageProps) {
           </form>
         </div>
       </div>
+
+      {/* プラン適用開始確認モーダル */}
+      {showActivateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="p-6">
+              <div className="flex items-center mb-4">
+                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                  <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 className="ml-4 text-lg font-medium text-gray-900">
+                  プラン適用開始の確認
+                </h3>
+              </div>
+
+              <div className="space-y-4 mb-6">
+                <div className="bg-gray-50 p-4 rounded-md">
+                  <div className="mb-3">
+                    <p className="text-sm text-gray-500 mb-1">適用店舗</p>
+                    <p className="font-medium text-gray-900">{formData.name || '店舗名未設定'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">適用プラン</p>
+                    <p className="font-medium text-gray-900">
+                      {subscriptionPlans.find((plan) => plan.id === formData.subscription_plan_id)
+                        ? subscriptionPlans.find((plan) => plan.id === formData.subscription_plan_id).display_name
+                        : '不明'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <h4 className="text-sm font-medium text-yellow-800 mb-2">以下の点をご確認ください</h4>
+                      <ul className="text-sm text-yellow-700 space-y-1">
+                        <li>✓ クレジット決済処理は完了していますか？</li>
+                        <li>✓ 適用店舗に誤りはありませんか？</li>
+                        <li>✓ プラン内容に誤りはありませんか？</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-sm text-gray-600">
+                  この操作により、プランの適用が開始されます。
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowActivateModal(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 font-medium"
+                >
+                  キャンセル
+                </button>
+                <button
+                  onClick={confirmActivatePlan}
+                  disabled={isSaving}
+                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400 font-medium"
+                >
+                  {isSaving ? '処理中...' : 'プラン適用を開始'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* プラン解約確認モーダル */}
+      {showCancelModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="p-6">
+              <div className="flex items-center mb-4">
+                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                  <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <h3 className="ml-4 text-lg font-medium text-gray-900">
+                  プラン解約の確認
+                </h3>
+              </div>
+
+              <div className="space-y-4 mb-6">
+                <div className="bg-gray-50 p-4 rounded-md">
+                  <div className="mb-3">
+                    <p className="text-sm text-gray-500 mb-1">対象店舗</p>
+                    <p className="font-medium text-gray-900">{formData.name || '店舗名未設定'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">現在のプラン</p>
+                    <p className="font-medium text-gray-900">
+                      {subscriptionPlans.find((plan) => plan.id === formData.subscription_plan_id)
+                        ? subscriptionPlans.find((plan) => plan.id === formData.subscription_plan_id).display_name
+                        : '不明'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-red-50 border-l-4 border-red-400 p-4">
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <h4 className="text-sm font-medium text-red-800 mb-2">重要な注意事項</h4>
+                      <ul className="text-sm text-red-700 space-y-1">
+                        <li>• プランを解約すると、Freeプランに戻ります</li>
+                        <li>• この操作は取り消せません</li>
+                        <li>• 優先表示などの特典がすべて無効になります</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-sm text-gray-600">
+                  本当にプランを解約してもよろしいですか？
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowCancelModal(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 font-medium"
+                >
+                  キャンセル
+                </button>
+                <button
+                  onClick={confirmCancelPlan}
+                  disabled={isSaving}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:bg-gray-400 font-medium"
+                >
+                  {isSaving ? '処理中...' : 'プランを解約する'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

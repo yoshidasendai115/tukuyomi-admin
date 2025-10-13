@@ -148,7 +148,11 @@ export async function PATCH(
       // その他のフィールド
       'contact_phone_for_ga',
       'custom_notes',
-      'accessible_stations'
+      'accessible_stations',
+      // プラン関連フィールド
+      'subscription_plan_id',
+      'plan_started_at',
+      'plan_expires_at'
     ];
 
     for (const field of allowedFields) {

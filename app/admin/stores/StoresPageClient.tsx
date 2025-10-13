@@ -599,14 +599,16 @@ export default function StoresPageClient() {
               {filteredStores.map((store) => (
                 <tr key={store.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap min-w-48">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">
-                        {store.name}
+                    <Link href={`/admin/stores/${store.id}/edit?${getCurrentFilterParams()}`}>
+                      <div className="cursor-pointer hover:text-indigo-600">
+                        <div className="text-sm font-medium text-gray-900 hover:text-indigo-600">
+                          {store.name}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {store.name_kana}
+                        </div>
                       </div>
-                      <div className="text-sm text-gray-500">
-                        {store.name_kana}
-                      </div>
-                    </div>
+                    </Link>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap min-w-32">
                     <div className="text-sm text-gray-900">{store.genre || '-'}</div>

@@ -8,15 +8,20 @@ import { SessionData } from '@/lib/auth';
 
 // Note: このページはMiddlewareでstore_ownerのアクセスをブロック済み
 
+interface PlanStat {
+  planId: string;
+  planName: string;
+  displayName: string;
+  count: number;
+  icon: string;
+  bgColor: string;
+}
+
 interface DashboardStats {
   pendingRequests: number;
   approvedRequests: number;
   totalStores: number;
-  freeStores: number;
-  basicStores: number;
-  standardStores: number;
-  advancedStores: number;
-  premiumStores: number;
+  planStats: PlanStat[];
   pendingReviewReports: number;
 }
 
@@ -26,11 +31,7 @@ export default function AdminDashboardPage() {
     pendingRequests: 0,
     approvedRequests: 0,
     totalStores: 0,
-    freeStores: 0,
-    basicStores: 0,
-    standardStores: 0,
-    advancedStores: 0,
-    premiumStores: 0,
+    planStats: [],
     pendingReviewReports: 0
   });
   const [session, setSession] = useState<SessionData | null>(null);
@@ -122,31 +123,43 @@ export default function AdminDashboardPage() {
         .from('stores')
         .select('id', { count: 'exact' });
 
-      // プラン別店舗数（5段階）
-      const { data: freeData } = await supabase
-        .from('stores')
-        .select('id', { count: 'exact' })
-        .eq('priority_score', 0);
+      // subscription_plansテーブルから全プラン取得
+      const { data: plansData } = await supabase
+        .from('subscription_plans')
+        .select('id, name, display_name, features')
+        .eq('is_active', true)
+        .order('display_order', { ascending: true });
 
-      const { data: basicData } = await supabase
-        .from('stores')
-        .select('id', { count: 'exact' })
-        .eq('priority_score', 2);
+      // アイコンと背景色のマッピング
+      const planIconMap: Record<string, { icon: string; bgColor: string }> = {
+        'free': { icon: '💵', bgColor: 'bg-blue-100' },
+        'light': { icon: '🥉', bgColor: 'bg-amber-100' },
+        'basic': { icon: '🥈', bgColor: 'bg-gray-100' },
+        'premium5': { icon: '💎', bgColor: 'bg-cyan-100' },
+        'premium10': { icon: '🥇', bgColor: 'bg-yellow-100' },
+        'premium15': { icon: '👑', bgColor: 'bg-purple-100' },
+      };
 
-      const { data: standardData } = await supabase
-        .from('stores')
-        .select('id', { count: 'exact' })
-        .eq('priority_score', 3);
+      // 各プランの店舗数を取得
+      const planStats: PlanStat[] = await Promise.all(
+        (plansData || []).map(async (plan) => {
+          const { count } = await supabase
+            .from('stores')
+            .select('id', { count: 'exact', head: true })
+            .eq('subscription_plan_id', plan.id);
 
-      const { data: advancedData } = await supabase
-        .from('stores')
-        .select('id', { count: 'exact' })
-        .eq('priority_score', 4);
+          const iconConfig = planIconMap[plan.name] || { icon: '📦', bgColor: 'bg-gray-100' };
 
-      const { data: premiumData } = await supabase
-        .from('stores')
-        .select('id', { count: 'exact' })
-        .eq('priority_score', 5);
+          return {
+            planId: plan.id,
+            planName: plan.name,
+            displayName: plan.display_name,
+            count: count || 0,
+            icon: iconConfig.icon,
+            bgColor: iconConfig.bgColor,
+          };
+        })
+      );
 
       // 口コミ通報の未対応件数
       const { data: reviewReportsData } = await supabase
@@ -158,11 +171,7 @@ export default function AdminDashboardPage() {
         pendingRequests: pendingData?.length || 0,
         approvedRequests: approvedData?.length || 0,
         totalStores: storeData?.length || 0,
-        freeStores: freeData?.length || 0,
-        basicStores: basicData?.length || 0,
-        standardStores: standardData?.length || 0,
-        advancedStores: advancedData?.length || 0,
-        premiumStores: premiumData?.length || 0,
+        planStats,
         pendingReviewReports: reviewReportsData?.length || 0
       });
     } catch (error) {
@@ -310,57 +319,17 @@ export default function AdminDashboardPage() {
         <div className="bg-white rounded-lg shadow p-6 mb-8">
           <h3 className="text-sm font-medium text-gray-500 mb-4">プラン別店舗数</h3>
           <div className="flex items-center justify-between space-x-4">
-            <div className="flex items-center space-x-2">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <svg className="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+            {stats.planStats.map((plan) => (
+              <div key={plan.planId} className="flex items-center space-x-2">
+                <div className={`p-2 ${plan.bgColor} rounded-lg`}>
+                  <span className="text-xl">{plan.icon}</span>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">{plan.displayName}</p>
+                  <p className="text-lg font-bold text-gray-900">{plan.count}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-xs text-gray-500">Free</p>
-                <p className="text-lg font-bold text-gray-900">{stats.freeStores}</p>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <div className="p-2 bg-amber-100 rounded-lg">
-                <span className="text-xl">🥉</span>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500">Basic</p>
-                <p className="text-lg font-bold text-gray-900">{stats.basicStores}</p>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <div className="p-2 bg-gray-100 rounded-lg">
-                <span className="text-xl">🥈</span>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500">Standard</p>
-                <p className="text-lg font-bold text-gray-900">{stats.standardStores}</p>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <div className="p-2 bg-cyan-100 rounded-lg">
-                <span className="text-xl">💎</span>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500">Advanced</p>
-                <p className="text-lg font-bold text-gray-900">{stats.advancedStores}</p>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <div className="p-2 bg-yellow-100 rounded-lg">
-                <span className="text-xl">🥇</span>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500">Premium</p>
-                <p className="text-lg font-bold text-gray-900">{stats.premiumStores}</p>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
 

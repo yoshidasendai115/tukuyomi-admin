@@ -269,10 +269,10 @@ export default function StoresPageClient() {
     if (!store) return;
 
     if (currentIsRecommended) {
-      // おすすめを解除
+      // PRを解除
       handleRecommendUpdate(storeId, false, 0, '');
     } else {
-      // おすすめ設定モーダルを表示
+      // PR設定モーダルを表示
       setSelectedStore(store);
       setPriorityScore(50);
       setRecommendationReason('');
@@ -609,7 +609,7 @@ export default function StoresPageClient() {
                         );
                       })()}
                       {store.is_recommended && (
-                        <span className="text-xs text-gray-500">★ おすすめ</span>
+                        <span className="text-xs text-gray-500">★ PR</span>
                       )}
                     </div>
                   </td>
@@ -749,9 +749,9 @@ export default function StoresPageClient() {
       {showRecommendModal && selectedStore && (
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-lg font-bold mb-4">おすすめ店舗に設定</h3>
+            <h3 className="text-lg font-bold mb-4">PR店舗に設定</h3>
             <p className="text-sm text-gray-600 mb-4">
-              「{selectedStore.name}」をおすすめ店舗に設定します
+              「{selectedStore.name}」をPR店舗に設定します
             </p>
 
             <div className="mb-4">
@@ -773,14 +773,14 @@ export default function StoresPageClient() {
 
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                おすすめ理由（任意）
+                PR理由（任意）
               </label>
               <textarea
                 value={recommendationReason}
                 onChange={(e) => setRecommendationReason(e.target.value)}
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900"
-                placeholder="例：雰囲気が良く、初心者にもおすすめ"
+                placeholder="例：雰囲気が良く、初心者にも人気"
               />
             </div>
 

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { setAllowedUrl, getAllowedUrl, fetchWithAuth } from '@/lib/fetch-with-auth';
+import { formatJapanesePhoneNumber, validateJapanesePhoneNumber } from '@/lib/utils/phoneFormatter';
 
 
 interface Store {
@@ -50,7 +51,7 @@ interface Store {
   tags?: string[];
   view_count?: number;
   owner_id?: string;
-  // 連絡先情報（GA社用）
+  // 連絡先情報（がるなび運営用）
   email?: string;
   line_id?: string;
   contact_phone_for_ga?: string;
@@ -84,6 +85,7 @@ interface Store {
   subscription_plan_id?: number;
   plan_started_at?: string;
   plan_expires_at?: string;
+  plan_history?: any[];
   max_images_allowed?: number;
   verified_at?: string;
   verified_by?: string;
@@ -140,6 +142,9 @@ function AdminStoreEditPageContent({ params }: PageProps) {
   // プラン操作確認モーダル用の状態
   const [showActivateModal, setShowActivateModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [planStartDate, setPlanStartDate] = useState<string>('');
+  const [planEndDate, setPlanEndDate] = useState<string>('');
+  const [planCancelDate, setPlanCancelDate] = useState<string>('');
 
   // メッセージ配信用の状態
   const [favoriteUsers, setFavoriteUsers] = useState<any[]>([]);
@@ -402,6 +407,18 @@ function AdminStoreEditPageContent({ params }: PageProps) {
     }
   };
 
+
+  // URLとして有効かチェック
+  const isValidURL = (url: string): boolean => {
+    if (!url) return true; // 空の場合はOK
+    try {
+      new URL(url);
+      return url.startsWith('http://') || url.startsWith('https://');
+    } catch {
+      return false;
+    }
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
 
@@ -417,9 +434,15 @@ function AdminStoreEditPageContent({ params }: PageProps) {
         [name]: value ? Number(value) : null
       }));
     } else {
+      // 電話番号フィールドの場合は自動整形
+      let processedValue = value;
+      if (name === 'phone_number' || name === 'contact_phone_for_ga') {
+        processedValue = formatJapanesePhoneNumber(value);
+      }
+
       setFormData(prev => ({
         ...prev,
-        [name]: value
+        [name]: processedValue
       }));
     }
 
@@ -616,6 +639,18 @@ function AdminStoreEditPageContent({ params }: PageProps) {
       return;
     }
 
+    // バリデーション: タイトルの文字数チェック
+    if (messageTitle.length > 20) {
+      alert(`タイトルは20文字以内で入力してください。\n現在: ${messageTitle.length}文字（${messageTitle.length - 20}文字オーバー）`);
+      return;
+    }
+
+    // バリデーション: 本文の文字数チェック
+    if (messageContent.length > 50) {
+      alert(`本文は50文字以内で入力してください。\n現在: ${messageContent.length}文字（${messageContent.length - 50}文字オーバー）`);
+      return;
+    }
+
     if (favoriteUsers.length === 0) {
       alert('お気に入り登録しているユーザーがいません');
       return;
@@ -665,9 +700,47 @@ function AdminStoreEditPageContent({ params }: PageProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // バリデーション: 店舗名の文字数チェック
+    if (formData.name && formData.name.length > 30) {
+      alert(`店舗名は30文字以内で入力してください。\n現在: ${formData.name.length}文字（${formData.name.length - 30}文字オーバー）`);
+      return;
+    }
+
     // バリデーション: 店舗説明の文字数チェック
-    if (formData.description && formData.description.length > 30) {
-      alert(`店舗説明は30文字以内で入力してください。\n現在: ${formData.description.length}文字（${formData.description.length - 30}文字オーバー）`);
+    if (formData.description && formData.description.length > 50) {
+      alert(`店舗説明は50文字以内で入力してください。\n現在: ${formData.description.length}文字（${formData.description.length - 50}文字オーバー）`);
+      return;
+    }
+
+    // バリデーション: 電話番号のチェック
+    if (formData.phone_number && !validateJapanesePhoneNumber(formData.phone_number)) {
+      alert('電話番号の形式が正しくありません。\n\n正しい形式:\n・ハイフンを2つ含む\n・末尾は4桁\n・例: 03-1234-5678、090-1234-5678、0119-99-9999');
+      return;
+    }
+
+    if (formData.contact_phone_for_ga && !validateJapanesePhoneNumber(formData.contact_phone_for_ga)) {
+      alert('連絡用電話番号の形式が正しくありません。\n\n正しい形式:\n・ハイフンを2つ含む\n・末尾は4桁\n・例: 03-1234-5678、090-1234-5678、0119-99-9999');
+      return;
+    }
+
+    // バリデーション: URLのチェック
+    if (formData.website && !isValidURL(formData.website)) {
+      alert('Webサイトの形式が正しくありません。\nhttp:// または https:// で始まる正しいURLを入力してください。');
+      return;
+    }
+
+    if (formData.sns_instagram && !isValidURL(formData.sns_instagram)) {
+      alert('InstagramのURLの形式が正しくありません。\nhttp:// または https:// で始まる正しいURLを入力してください。');
+      return;
+    }
+
+    if (formData.sns_twitter && !isValidURL(formData.sns_twitter)) {
+      alert('X (Twitter)のURLの形式が正しくありません。\nhttp:// または https:// で始まる正しいURLを入力してください。');
+      return;
+    }
+
+    if (formData.sns_tiktok && !isValidURL(formData.sns_tiktok)) {
+      alert('TikTokのURLの形式が正しくありません。\nhttp:// または https:// で始まる正しいURLを入力してください。');
       return;
     }
 
@@ -757,6 +830,15 @@ function AdminStoreEditPageContent({ params }: PageProps) {
     }
   };
 
+  // 今日の日付を取得（YYYY-MM-DD形式）
+  const getTodayDateString = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   // プラン適用開始ハンドラー（モーダル表示）
   const handleActivatePlan = () => {
     if (
@@ -767,6 +849,8 @@ function AdminStoreEditPageContent({ params }: PageProps) {
       alert('プランが選択されていません');
       return;
     }
+    setPlanStartDate(getTodayDateString());
+    setPlanEndDate(''); // 終了日はクリア（未設定=無期限）
     setShowActivateModal(true);
   };
 
@@ -776,13 +860,18 @@ function AdminStoreEditPageContent({ params }: PageProps) {
       throw new Error('店舗情報が存在しません');
     }
 
+    if (!planStartDate) {
+      alert('プラン適用開始日を選択してください');
+      return;
+    }
+
     setShowActivateModal(false);
     setIsSaving(true);
     try {
       const updateData = {
         subscription_plan_id: formData.subscription_plan_id,
-        plan_started_at: new Date().toISOString(),
-        plan_expires_at: null
+        plan_started_at: new Date(planStartDate).toISOString(),
+        plan_expires_at: planEndDate ? new Date(planEndDate).toISOString() : null
       };
 
       const response = await fetch(`/api/stores/${store.id}`, {
@@ -811,6 +900,7 @@ function AdminStoreEditPageContent({ params }: PageProps) {
 
   // プラン解約ハンドラー（モーダル表示）
   const handleCancelPlan = () => {
+    setPlanCancelDate(getTodayDateString());
     setShowCancelModal(true);
   };
 
@@ -818,13 +908,18 @@ function AdminStoreEditPageContent({ params }: PageProps) {
   const confirmCancelPlan = async () => {
     if (!store) return;
 
+    if (!planCancelDate) {
+      alert('プラン解約日を選択してください');
+      return;
+    }
+
     setShowCancelModal(false);
     setIsSaving(true);
     try {
       const updateData = {
         subscription_plan_id: 0,
         plan_started_at: null,
-        plan_expires_at: null
+        plan_expires_at: new Date(planCancelDate).toISOString()
       };
 
       const response = await fetch(`/api/stores/${store.id}`, {
@@ -1042,13 +1137,13 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                         placeholder="店舗の特徴や魅力を記入"
                       />
                       <p className={`mt-1 text-xs ${
-                        (formData.description || '').length > 30
+                        (formData.description || '').length > 50
                           ? 'text-red-600 font-semibold'
                           : 'text-gray-500'
                       }`}>
-                        {(formData.description || '').length > 30
-                          ? `(-${(formData.description || '').length - 30})`
-                          : `${(formData.description || '').length}/30文字`}
+                        {(formData.description || '').length > 50
+                          ? `${(formData.description || '').length}/50文字（${(formData.description || '').length - 50}文字オーバー）`
+                          : `${(formData.description || '').length}/50文字`}
                       </p>
                     </div>
 
@@ -1230,7 +1325,7 @@ function AdminStoreEditPageContent({ params }: PageProps) {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        電話番号
+                        電話番号（ハイフン必須）
                       </label>
                       <input
                         type="tel"
@@ -1240,7 +1335,7 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         placeholder="03-1234-5678"
                       />
-                      <p className="text-xs text-gray-500 mt-1">※ お客様向けに掲載される電話番号です</p>
+                      <p className="text-xs text-gray-500 mt-1">※ お客様向けに掲載される電話番号です（例: 03-1234-5678、090-1234-5678）</p>
                     </div>
 
                     <div>
@@ -1710,7 +1805,7 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      連絡用電話番号
+                      連絡用電話番号（ハイフン必須）
                     </label>
                     <input
                       type="tel"
@@ -1720,7 +1815,7 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       placeholder="03-9876-5432"
                     />
-                    <p className="text-xs text-gray-500 mt-1">※ GA社から店舗様への連絡用電話番号</p>
+                    <p className="text-xs text-gray-500 mt-1">※ がるなび運営から店舗様への連絡用電話番号</p>
                   </div>
 
                   <div>
@@ -1735,7 +1830,7 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       placeholder="contact@example.com"
                     />
-                    <p className="text-xs text-gray-500 mt-1">※ GA社からの重要なご連絡に使用します</p>
+                    <p className="text-xs text-gray-500 mt-1">※ がるなび運営からの重要なご連絡に使用します</p>
                   </div>
 
                   <div>
@@ -1750,7 +1845,7 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       placeholder="@store_contact"
                     />
-                    <p className="text-xs text-gray-500 mt-1">※ GA社からの迅速なご連絡に使用します</p>
+                    <p className="text-xs text-gray-500 mt-1">※ がるなび運営からの迅速なご連絡に使用します</p>
                   </div>
                 </div>
               </div>
@@ -2151,7 +2246,7 @@ function AdminStoreEditPageContent({ params }: PageProps) {
 
                 {/* メッセージ作成フォーム */}
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">
                     新規メッセージ作成
                   </h3>
 
@@ -2183,6 +2278,15 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                         placeholder="例: 年末年始の営業時間のお知らせ"
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       />
+                      <p className={`mt-1 text-xs ${
+                        messageTitle.length > 20
+                          ? 'text-red-600 font-semibold'
+                          : 'text-gray-500'
+                      }`}>
+                        {messageTitle.length > 20
+                          ? `${messageTitle.length}/20文字（${messageTitle.length - 20}文字オーバー）`
+                          : `${messageTitle.length}/20文字`}
+                      </p>
                     </div>
 
                     <div>
@@ -2196,6 +2300,15 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                         placeholder="メッセージの内容を入力してください"
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       />
+                      <p className={`mt-1 text-xs ${
+                        messageContent.length > 50
+                          ? 'text-red-600 font-semibold'
+                          : 'text-gray-500'
+                      }`}>
+                        {messageContent.length > 50
+                          ? `${messageContent.length}/50文字（${messageContent.length - 50}文字オーバー）`
+                          : `${messageContent.length}/50文字`}
+                      </p>
                     </div>
 
                     <button
@@ -2211,7 +2324,7 @@ function AdminStoreEditPageContent({ params }: PageProps) {
 
                 {/* 送信履歴 */}
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">
                     送信履歴
                   </h3>
 
@@ -2559,6 +2672,77 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                     </div>
                   </div>
 
+                  {/* プラン履歴 */}
+                  {store?.plan_history && Array.isArray(store.plan_history) && store.plan_history.length > 0 && (
+                    <div className="mt-8 pt-6 border-t border-gray-200">
+                      <h3 className="text-lg font-bold text-gray-900 mb-4">プラン契約履歴</h3>
+                      <div className="bg-white rounded-lg border border-gray-200">
+                        <div className="overflow-x-auto">
+                          <table className="w-full">
+                            <thead className="bg-gray-50 border-b border-gray-200">
+                              <tr>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  操作
+                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  プラン名
+                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  開始日
+                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  終了日
+                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  記録日時
+                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  操作者
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200">
+                              {[...store.plan_history].reverse().map((history: any, index: number) => (
+                                <tr key={index} className="hover:bg-gray-50">
+                                  <td className="px-4 py-3 whitespace-nowrap">
+                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                      history.action === 'activated'
+                                        ? 'bg-green-100 text-green-800'
+                                        : 'bg-red-100 text-red-800'
+                                    }`}>
+                                      {history.action === 'activated' ? '適用開始' : '解約'}
+                                    </span>
+                                  </td>
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    {history.plan_name}
+                                  </td>
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                                    {history.started_at ? new Date(history.started_at).toLocaleDateString('ja-JP') : '-'}
+                                  </td>
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                                    {history.ended_at ? new Date(history.ended_at).toLocaleDateString('ja-JP') : '無期限'}
+                                  </td>
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                                    {new Date(history.created_at).toLocaleString('ja-JP', {
+                                      year: 'numeric',
+                                      month: '2-digit',
+                                      day: '2-digit',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                  </td>
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                                    {history.created_by || '-'}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* 内部メモ */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -2625,6 +2809,37 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                         : '不明'}
                     </p>
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    プラン適用開始日 <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={planStartDate}
+                    onChange={(e) => setPlanStartDate(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                    required
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    プランの適用を開始する日付を選択してください
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    プラン終了日（オプション）
+                  </label>
+                  <input
+                    type="date"
+                    value={planEndDate}
+                    onChange={(e) => setPlanEndDate(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    未設定の場合は無期限となります
+                  </p>
                 </div>
 
                 <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
@@ -2700,6 +2915,22 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                         : '不明'}
                     </p>
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    プラン解約日 <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={planCancelDate}
+                    onChange={(e) => setPlanCancelDate(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                    required
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    プランを解約する日付を選択してください
+                  </p>
                 </div>
 
                 <div className="bg-red-50 border-l-4 border-red-400 p-4">

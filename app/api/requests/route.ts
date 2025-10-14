@@ -76,14 +76,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 画像必須チェック
-    if (!business_license_image) {
-      return NextResponse.json(
-        { error: '飲食店営業許可証の画像をアップロードしてください' },
-        { status: 400 }
-      );
-    }
-
     if (!supabaseAdmin) {
       return NextResponse.json(
         { message: 'サーバー設定エラー' },

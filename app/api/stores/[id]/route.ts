@@ -26,10 +26,10 @@ export async function GET(
 
     const { id: storeId } = await params;
 
-    // 店舗情報を取得
+    // 店舗情報を取得（plan_historyを明示的に指定）
     const { data, error } = await supabaseAdmin
       .from('stores')
-      .select('*')
+      .select('*, plan_history')
       .eq('id', storeId)
       .single();
 
@@ -249,6 +249,23 @@ export async function PATCH(
     // 更新日時を追加
     updateData.updated_at = new Date().toISOString();
 
+    // プラン履歴を記録するかチェック
+    const shouldRecordPlanHistory = (
+      'plan_started_at' in updateData ||
+      'plan_expires_at' in updateData
+    );
+
+    // 現在の店舗データを取得（履歴記録用）
+    let currentStoreData: any = null;
+    if (shouldRecordPlanHistory) {
+      const { data: currentData } = await supabaseAdmin
+        .from('stores')
+        .select('plan_history, subscription_plan_id')
+        .eq('id', storeId)
+        .single();
+      currentStoreData = currentData;
+    }
+
     // 店舗情報を更新
     const { data, error } = await supabaseAdmin
       .from('stores')
@@ -263,6 +280,67 @@ export async function PATCH(
         { error: error.message },
         { status: 500 }
       );
+    }
+
+    // プラン履歴を記録
+    if (shouldRecordPlanHistory && currentStoreData) {
+      try {
+        // 既存の履歴を取得（なければ空配列）
+        const existingHistory = Array.isArray(currentStoreData.plan_history)
+          ? currentStoreData.plan_history
+          : [];
+
+        // 新しい履歴エントリを作成
+        const historyEntry: any = {
+          created_at: new Date().toISOString(),
+          created_by: session.userId || session.displayName || 'unknown'
+        };
+
+        // プラン適用開始の場合
+        if ('plan_started_at' in updateData && updateData.plan_started_at) {
+          // subscription_plan_idからプラン名を取得
+          const { data: planData } = await supabaseAdmin
+            .from('subscription_plans')
+            .select('display_name')
+            .eq('id', updateData.subscription_plan_id || currentStoreData.subscription_plan_id)
+            .single();
+
+          historyEntry.action = 'activated';
+          historyEntry.plan_id = updateData.subscription_plan_id || currentStoreData.subscription_plan_id;
+          historyEntry.plan_name = planData?.display_name || 'Unknown';
+          historyEntry.started_at = updateData.plan_started_at;
+          historyEntry.ended_at = null;
+        }
+        // プラン解約の場合
+        else if ('plan_expires_at' in updateData && updateData.plan_expires_at) {
+          // subscription_plan_idからプラン名を取得
+          const { data: planData } = await supabaseAdmin
+            .from('subscription_plans')
+            .select('display_name')
+            .eq('id', currentStoreData.subscription_plan_id)
+            .single();
+
+          historyEntry.action = 'cancelled';
+          historyEntry.plan_id = currentStoreData.subscription_plan_id;
+          historyEntry.plan_name = planData?.display_name || 'Unknown';
+          historyEntry.started_at = null;
+          historyEntry.ended_at = updateData.plan_expires_at;
+        }
+
+        // 履歴を追加
+        const newHistory = [...existingHistory, historyEntry];
+
+        // plan_historyを更新
+        await supabaseAdmin
+          .from('stores')
+          .update({ plan_history: newHistory })
+          .eq('id', storeId);
+
+        console.log(`[Store Update] Plan history recorded for store ${storeId}:`, historyEntry);
+      } catch (historyError) {
+        console.error('[Store Update] Failed to record plan history:', historyError);
+        // 履歴記録に失敗しても処理は継続
+      }
     }
 
     // IPアドレスの取得

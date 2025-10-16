@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { setAllowedUrl, getAllowedUrl, fetchWithAuth } from '@/lib/fetch-with-auth';
 import { formatJapanesePhoneNumber, validateJapanesePhoneNumber } from '@/lib/utils/phoneFormatter';
+import { getPlanName, canBroadcast } from '@/lib/broadcast-limits';
 
 
 interface Store {
@@ -1005,11 +1006,38 @@ function AdminStoreEditPageContent({ params }: PageProps) {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-6xl mx-auto px-4">
+        {/* 店舗ユーザーログイン時のみアプリ名を表示 */}
+        {isStoreOwner && (
+          <div className="mb-4">
+            <h2 className="text-xl font-bold text-gray-900">
+              {process.env.NEXT_PUBLIC_APP_NAME}
+            </h2>
+          </div>
+        )}
         <div className="bg-white rounded-lg shadow-lg">
           <div className="p-6 border-b">
             <div className="flex justify-between items-start">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">店舗情報編集</h1>
+                <div className="flex items-center gap-3">
+                  <h1 className="text-2xl font-bold text-gray-900">店舗情報編集</h1>
+                  {store !== null && store.subscription_plan_id !== null && store.subscription_plan_id !== undefined && (
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
+                      store.subscription_plan_id === 0
+                        ? 'bg-blue-50 text-blue-700 border-blue-200'
+                        : store.subscription_plan_id === 1
+                        ? 'bg-amber-100 text-amber-800 border-amber-400'
+                        : store.subscription_plan_id === 2
+                        ? 'bg-gray-100 text-gray-800 border-gray-400'
+                        : store.subscription_plan_id === 3
+                        ? 'bg-cyan-100 text-cyan-800 border-cyan-400'
+                        : store.subscription_plan_id === 4
+                        ? 'bg-yellow-100 text-yellow-800 border-yellow-400'
+                        : 'bg-purple-100 text-purple-800 border-purple-400'
+                    }`}>
+                      {getPlanName(store.subscription_plan_id)}
+                    </span>
+                  )}
+                </div>
                 <p className="mt-2 text-sm text-gray-600">
                   {formData.name} の店舗情報を編集できます
                 </p>
@@ -1066,19 +1094,59 @@ function AdminStoreEditPageContent({ params }: PageProps) {
           {/* タブメニュー */}
           <div className="border-b border-gray-200 bg-gray-50">
             <div className="flex flex-wrap gap-2 p-3">
-              {tabs.map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`px-4 py-2 text-sm font-medium whitespace-nowrap rounded-lg transition-all duration-200 ${
-                    activeTab === tab.id
-                      ? 'text-white bg-indigo-600 shadow-md'
-                      : 'text-gray-600 bg-white hover:text-indigo-600 hover:bg-indigo-50 shadow-sm'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
+              {tabs.map(tab => {
+                const isMessageTab = tab.id === 'message';
+                // 店舗ユーザーログインの場合のみブロードキャスト制限を適用
+                const isBroadcastDisabled = isStoreOwner && isMessageTab && (
+                  store === null ||
+                  typeof store.subscription_plan_id !== 'number' ||
+                  !canBroadcast(store.subscription_plan_id)
+                );
+
+                return (
+                  <div key={tab.id} className="relative group">
+                    <button
+                      onClick={() => {
+                        if (!isBroadcastDisabled) {
+                          setActiveTab(tab.id);
+                        }
+                      }}
+                      disabled={isBroadcastDisabled}
+                      className={`px-4 py-2 text-sm font-medium whitespace-nowrap rounded-lg transition-all duration-200 flex items-center gap-2 ${
+                        isBroadcastDisabled
+                          ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                          : activeTab === tab.id
+                          ? 'text-white bg-indigo-600 shadow-md'
+                          : 'text-gray-600 bg-white hover:text-indigo-600 hover:bg-indigo-50 shadow-sm'
+                      }`}
+                    >
+                      {tab.label}
+                      {isBroadcastDisabled && (
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4 text-yellow-600"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      )}
+                    </button>
+                    {isBroadcastDisabled && (
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                        ライトプラン以上で利用可能
+                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
+                          <div className="border-4 border-transparent border-t-gray-900"></div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
 

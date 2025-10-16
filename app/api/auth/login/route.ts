@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { createSession } from '@/lib/auth';
+import { initializeWeeklyLimit } from '@/lib/broadcast-limits';
 import bcrypt from 'bcryptjs';
 
 export async function POST(request: NextRequest) {
@@ -249,6 +250,16 @@ export async function POST(request: NextRequest) {
     }
 
     await createSession(sessionData);
+
+    // store_ownerの場合、お知らせ配信の週次制限を初期化
+    if (user.role === 'store_owner' && user.assigned_store_id) {
+      console.log('[Login] Initializing weekly broadcast limit for store:', user.assigned_store_id);
+      const initResult = await initializeWeeklyLimit(user.assigned_store_id);
+      if (!initResult.success) {
+        console.error('[Login] Failed to initialize weekly limit:', initResult.error);
+        // 初期化失敗してもログインは継続（エラーログのみ）
+      }
+    }
 
     console.log('Login successful for user:', user.login_id);
     return NextResponse.json(

@@ -24,7 +24,7 @@ export default function HomePage() {
           </div>
 
           <div className="mt-8 text-center text-xs text-gray-500">
-            <p>© 2025 Garunavi. All rights reserved.</p>
+            <p>© 2025 がるなび All rights reserved.</p>
           </div>
         </div>
       </div>

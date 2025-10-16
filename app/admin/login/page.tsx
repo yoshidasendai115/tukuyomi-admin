@@ -52,7 +52,10 @@ export default function AdminLoginPage() {
       const data = await response.json();
 
       if (!response.ok) {
+        // APIからのエラーメッセージを表示（システムエラーや認証エラーを含む）
         setError(data.message || 'ログインに失敗しました');
+
+        // ログイン試行回数の処理
         if (data.attemptsRemaining !== undefined) {
           setError(prev => `${prev}（残り試行回数: ${data.attemptsRemaining}回）`);
 
@@ -70,7 +73,7 @@ export default function AdminLoginPage() {
         return;
       }
 
-      // ロールに応じてリダイレクト先を変更
+      // ログイン成功 - ロールに応じてリダイレクト先を変更
       if (data.role === 'store_owner' && data.assignedStoreId) {
         router.push(`/admin/stores/${data.assignedStoreId}/edit`);
       } else {
@@ -180,7 +183,7 @@ export default function AdminLoginPage() {
 
         <div className="mt-4 text-center">
           <p className="text-xs text-gray-500">
-            © 2025 Garunavi. All rights reserved.
+            © 2025 がるなび All rights reserved.
           </p>
         </div>
       </div>

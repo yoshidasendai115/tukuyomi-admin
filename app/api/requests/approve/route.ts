@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const { requestId, adminNotes } = await request.json();
+    const { requestId, adminNotes, noStoreSelected } = await request.json();
 
     if (!requestId) {
       return NextResponse.json(
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 申請データを取得
+    // 申請データを取得（pending または verified のみ）
     const { data: requestData, error: fetchError } = await supabaseAdmin
       .from('admin_store_edit_requests')
       .select('*')
@@ -51,10 +51,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // ステータスチェック：pending または verified のみ承認可能
+    if (requestData.status !== 'pending' && requestData.status !== 'verified') {
+      console.log('[Approve] Invalid status:', requestData.status);
+      return NextResponse.json(
+        { error: `この申請は承認できません（現在のステータス: ${requestData.status}）` },
+        { status: 400 }
+      );
+    }
+
     // store_idが未設定または店舗が存在しない場合は新規作成
     let storeId = requestData.store_id;
 
-    if (!storeId) {
+    // noStoreSelectedがtrueの場合は店舗作成をスキップ
+    if (noStoreSelected === true) {
+      console.log('[Approve] noStoreSelected is true, skipping store creation');
+      storeId = null;
+    } else if (!storeId) {
       console.log('[Approve] store_id is null, creating new store');
 
       // 住所から緯度経度を取得

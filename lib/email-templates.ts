@@ -12,8 +12,8 @@ export type EmailTemplate = {
 /**
  * 環境変数から値を取得するヘルパー関数
  */
-const getAppName = () => process.env.APP_NAME || 'つくよみ';
-const getFromName = () => process.env.EMAIL_FROM_NAME || 'つくよみ運営チーム';
+const getAppName = () => process.env.APP_NAME || 'がるなび';
+const getFromName = () => process.env.EMAIL_FROM_NAME || 'がるなび運営チーム';
 const getSupportEmail = () => process.env.EMAIL_SUPPORT || 'support@garunavi.jp';
 
 /**

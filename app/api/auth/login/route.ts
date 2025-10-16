@@ -74,7 +74,8 @@ export async function POST(request: NextRequest) {
       loginId: user.login_id,
       isActive: user.is_active,
       role: user.role,
-      passwordHashLength: user.password_hash?.length
+      passwordHashLength: user.password_hash?.length,
+      assignedStoreId: user.assigned_store_id
     });
 
     // アカウントが無効化されている場合
@@ -94,6 +95,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { message: 'このアカウントは無効化されています。管理者にお問い合わせください。' },
         { status: 401 }
+      );
+    }
+
+    // store_ownerの場合、assigned_store_idが必須
+    if (user.role === 'store_owner' && !user.assigned_store_id) {
+      console.error('[Login] store_owner has no assigned_store_id:', user.login_id);
+
+      await supabaseAdmin
+        .from('admin_access_logs')
+        .insert({
+          action: 'admin_login_failed',
+          details: {
+            login_id: loginId,
+            reason: 'missing_assigned_store',
+            user_id: user.id
+          },
+          ip_address: ip,
+          user_agent: request.headers.get('user-agent') || undefined
+        });
+
+      return NextResponse.json(
+        { message: 'アカウント設定に不備があります。がるなび運営にお問い合わせください。' },
+        { status: 500 }
       );
     }
 

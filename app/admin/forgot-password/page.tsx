@@ -158,7 +158,7 @@ export default function ForgotPasswordPage() {
 
         <div className="mt-4 text-center">
           <p className="text-xs text-gray-500">
-            © 2025 Garunavi. All rights reserved.
+            © 2025 がるなび All rights reserved.
           </p>
         </div>
       </div>

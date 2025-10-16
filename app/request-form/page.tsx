@@ -126,7 +126,14 @@ export default function RequestFormPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* ヘッダー */}
+        {/* アプリ名ヘッダー */}
+        <div className="mb-4">
+          <h2 className="text-xl font-bold text-gray-900">
+            {process.env.NEXT_PUBLIC_APP_NAME}
+          </h2>
+        </div>
+
+        {/* ページヘッダー */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">店舗編集権限 申請フォーム</h1>
           <p className="text-sm text-gray-600">

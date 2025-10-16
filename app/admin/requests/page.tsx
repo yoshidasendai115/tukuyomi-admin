@@ -65,7 +65,7 @@ interface StoreEditRequest {
   identity_document_image?: string;
   license_holder_name?: string;
   applicant_relationship?: 'owner' | 'manager' | 'employee' | 'representative';
-  document_verification_status?: 'pending' | 'verified' | 'rejected';
+  document_verification_status?: 'pending' | 'reviewing' | 'verified' | 'rejected';
   verification_notes?: string;
   genre_id?: string;
   genre?: Genre;
@@ -338,6 +338,30 @@ export default function AdminRequestsPage() {
     }
   };
 
+  // 却下された申請を物理削除
+  const handleDelete = async (requestId: string, storeName: string) => {
+    if (!confirm(`「${storeName}」の申請を完全に削除しますか？\n\nこの操作は取り消せません。`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/requests/${requestId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.error || '削除に失敗しました');
+      }
+
+      alert('申請を削除しました');
+      await fetchRequests();
+    } catch (error) {
+      console.error('Error deleting request:', error);
+      alert('削除処理中にエラーが発生しました');
+    }
+  };
+
   // 店舗候補を検索（タブ内で使用）
   const handleSearchStoreCandidates = async (request: StoreEditRequest) => {
     setIsSearchingStores(true);
@@ -447,11 +471,13 @@ export default function AdminRequestsPage() {
   const getVerificationBadge = (status: string) => {
     const badges = {
       pending: 'bg-yellow-100 text-yellow-800',
+      reviewing: 'bg-blue-100 text-blue-800',
       verified: 'bg-green-100 text-green-800',
       rejected: 'bg-red-100 text-red-800'
     };
     const labels = {
       pending: '未確認',
+      reviewing: '確認中',
       verified: '確認済',
       rejected: '不備あり'
     };
@@ -726,22 +752,32 @@ export default function AdminRequestsPage() {
                     {getVerificationBadge(request.document_verification_status || 'pending')}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <button
-                      onClick={() => {
-                        setSelectedRequest(request);
-                        setNoStoreSelected(false);
-                        setActiveTab('info');
-                        setShowModal(true);
-                        setTimeout(() => {
-                          if (modalContentRef.current !== null) {
-                            modalContentRef.current.scrollTop = 0;
-                          }
-                        }, 0);
-                      }}
-                      className="text-indigo-600 hover:text-indigo-900"
-                    >
-                      詳細
-                    </button>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => {
+                          setSelectedRequest(request);
+                          setNoStoreSelected(false);
+                          setActiveTab('info');
+                          setShowModal(true);
+                          setTimeout(() => {
+                            if (modalContentRef.current !== null) {
+                              modalContentRef.current.scrollTop = 0;
+                            }
+                          }, 0);
+                        }}
+                        className="text-indigo-600 hover:text-indigo-900"
+                      >
+                        詳細
+                      </button>
+                      {statusFilter === 'rejected' && request.status === 'rejected' && (
+                        <button
+                          onClick={() => handleDelete(request.id, request.store_name)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          削除
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -791,7 +827,7 @@ export default function AdminRequestsPage() {
                   }`}
                 >
                   📄 提出書類
-                  {selectedRequest.document_verification_status === 'pending' && (
+                  {(selectedRequest.document_verification_status === 'pending' || selectedRequest.document_verification_status === 'reviewing') && (
                     <span className="absolute top-1 right-1 w-2 h-2 bg-yellow-400 rounded-full"></span>
                   )}
                 </button>
@@ -1125,7 +1161,7 @@ export default function AdminRequestsPage() {
                     <select
                       value={selectedRequest.document_verification_status || 'pending'}
                       onChange={(e) => {
-                        const newStatus = e.target.value as 'pending' | 'verified' | 'rejected';
+                        const newStatus = e.target.value as 'pending' | 'reviewing' | 'verified' | 'rejected';
                         let notes = selectedRequest.verification_notes || '';
 
                         if (newStatus === 'rejected' && !notes) {
@@ -1141,14 +1177,23 @@ export default function AdminRequestsPage() {
 
                         handleVerificationUpdate(selectedRequest.id, newStatus, notes);
                       }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      disabled={selectedRequest.status === 'approved' || selectedRequest.status === 'rejected'}
+                      className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                        selectedRequest.status === 'approved' || selectedRequest.status === 'rejected'
+                          ? 'bg-gray-100 cursor-not-allowed'
+                          : ''
+                      }`}
                     >
                       <option value="pending">未確認</option>
+                      <option value="reviewing">確認中</option>
                       <option value="verified">確認済</option>
                       <option value="rejected">書類不備</option>
                     </select>
                     {selectedRequest.verification_notes && (
                       <p className="mt-2 text-sm text-gray-600">確認メモ: {selectedRequest.verification_notes}</p>
+                    )}
+                    {(selectedRequest.status === 'approved' || selectedRequest.status === 'rejected') && (
+                      <p className="mt-2 text-xs text-gray-500">※ 申請が確定しているため、書類確認ステータスは変更できません</p>
                     )}
                   </div>
                 </div>

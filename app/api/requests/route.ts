@@ -117,6 +117,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 申請受付メールを送信
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3002';
+      const emailResponse = await fetch(`${baseUrl}/api/emails/send-request-received`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          to: applicant_email,
+          applicantName: applicant_name,
+          storeName: store_name,
+        }),
+      });
+
+      if (!emailResponse.ok) {
+        const errorData = await emailResponse.json();
+        console.error('Failed to send request received email:', errorData);
+      } else {
+        console.log('Request received email sent successfully to:', applicant_email);
+      }
+    } catch (emailError) {
+      console.error('Error sending request received email:', emailError);
+      // メール送信失敗でも申請処理は成功とする
+    }
+
     return NextResponse.json({
       success: true,
       message: '申請が正常に送信されました。管理者による確認をお待ちください。',

@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getSession } from '@/lib/auth';
+import { Resend } from 'resend';
+import { requestReceivedEmail } from '@/lib/request-received-email-template';
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function GET(request: NextRequest) {
   try {
@@ -119,27 +123,30 @@ export async function POST(request: NextRequest) {
 
     // 申請受付メールを送信
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3002';
-      const emailResponse = await fetch(`${baseUrl}/api/emails/send-request-received`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          to: applicant_email,
+      if (!process.env.RESEND_API_KEY || !process.env.EMAIL_FROM) {
+        console.error('[Request Received Email] Email service not configured');
+      } else {
+        const emailTemplate = requestReceivedEmail({
           applicantName: applicant_name,
           storeName: store_name,
-        }),
-      });
+        });
 
-      if (!emailResponse.ok) {
-        const errorData = await emailResponse.json();
-        console.error('Failed to send request received email:', errorData);
-      } else {
-        console.log('Request received email sent successfully to:', applicant_email);
+        const { error: emailError } = await resend.emails.send({
+          from: process.env.EMAIL_FROM,
+          to: [applicant_email],
+          subject: emailTemplate.subject,
+          html: emailTemplate.html,
+          text: emailTemplate.text,
+        });
+
+        if (emailError) {
+          console.error('[Request Received Email] Failed to send:', emailError);
+        } else {
+          console.log('[Request Received Email] Email sent successfully to:', applicant_email);
+        }
       }
     } catch (emailError) {
-      console.error('Error sending request received email:', emailError);
+      console.error('[Request Received Email] Error:', emailError);
       // メール送信失敗でも申請処理は成功とする
     }
 

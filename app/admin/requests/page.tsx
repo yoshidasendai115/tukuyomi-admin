@@ -1164,8 +1164,8 @@ export default function AdminRequestsPage() {
                         const newStatus = e.target.value as 'pending' | 'reviewing' | 'verified' | 'rejected';
                         let notes = selectedRequest.verification_notes || '';
 
-                        // 確認中の場合は即座にAPIコールせず、ローカル状態のみ更新
-                        if (newStatus === 'reviewing') {
+                        // 確認中または未確認の場合は即座にAPIコールせず、ローカル状態のみ更新
+                        if (newStatus === 'reviewing' || newStatus === 'pending') {
                           setSelectedRequest({
                             ...selectedRequest,
                             document_verification_status: newStatus
@@ -1427,18 +1427,27 @@ export default function AdminRequestsPage() {
                       却下
                     </button>
                     <button
-                      onClick={() => {
-                        // 確認中ステータスの場合は保存ボタンとして動作
-                        if (selectedRequest.document_verification_status === 'reviewing') {
-                          handleVerificationUpdate(selectedRequest.id, 'reviewing', selectedRequest.verification_notes || '');
+                      onClick={async () => {
+                        // 確認中または未確認の場合は保存ボタンとして動作
+                        if (
+                          selectedRequest.document_verification_status === 'reviewing' ||
+                          selectedRequest.document_verification_status === 'pending'
+                        ) {
+                          await handleVerificationUpdate(
+                            selectedRequest.id,
+                            selectedRequest.document_verification_status,
+                            selectedRequest.verification_notes || ''
+                          );
+                          setShowModal(false);
                         } else {
                           // その他の場合は承認ボタンとして動作
                           handleApprove(selectedRequest);
                         }
                       }}
                       disabled={
-                        selectedRequest.document_verification_status === 'reviewing'
-                          ? false // 確認中の場合は常に活性化
+                        selectedRequest.document_verification_status === 'reviewing' ||
+                        selectedRequest.document_verification_status === 'pending'
+                          ? false // 確認中または未確認の場合は常に活性化
                           : selectedRequest.document_verification_status !== 'verified' ||
                             (
                               (typeof selectedRequest.store_id !== 'string' || selectedRequest.store_id.length === 0) &&
@@ -1447,8 +1456,9 @@ export default function AdminRequestsPage() {
                             )
                       }
                       className={`px-4 py-2 rounded-md ${
-                        selectedRequest.document_verification_status === 'reviewing'
-                          ? 'bg-blue-600 text-white hover:bg-blue-700' // 確認中の場合は青色
+                        selectedRequest.document_verification_status === 'reviewing' ||
+                        selectedRequest.document_verification_status === 'pending'
+                          ? 'bg-blue-600 text-white hover:bg-blue-700' // 確認中または未確認の場合は青色
                           : selectedRequest.document_verification_status !== 'verified' ||
                             (
                               (typeof selectedRequest.store_id !== 'string' || selectedRequest.store_id.length === 0) &&
@@ -1459,7 +1469,8 @@ export default function AdminRequestsPage() {
                           : 'bg-green-600 text-white hover:bg-green-700'
                       }`}
                       title={
-                        selectedRequest.document_verification_status === 'reviewing'
+                        selectedRequest.document_verification_status === 'reviewing' ||
+                        selectedRequest.document_verification_status === 'pending'
                           ? '書類確認ステータスを保存します'
                           : selectedRequest.document_verification_status !== 'verified'
                           ? '書類確認を完了してください'
@@ -1468,7 +1479,10 @@ export default function AdminRequestsPage() {
                           : ''
                       }
                     >
-                      {selectedRequest.document_verification_status === 'reviewing' ? '保存' : '承認'}
+                      {selectedRequest.document_verification_status === 'reviewing' ||
+                       selectedRequest.document_verification_status === 'pending'
+                        ? '保存'
+                        : '承認'}
                     </button>
                   </>
                 )}

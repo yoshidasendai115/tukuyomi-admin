@@ -19,14 +19,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!['verified', 'rejected'].includes(verificationStatus)) {
+    if (!['pending', 'reviewing', 'verified', 'rejected'].includes(verificationStatus)) {
       return NextResponse.json(
         { error: '無効な確認ステータスです' },
         { status: 400 }
       );
     }
 
-    if (!supabaseAdmin) {
+    if (
+      typeof supabaseAdmin !== 'object' ||
+      supabaseAdmin === null
+    ) {
       return NextResponse.json(
         { message: 'サーバー設定エラー' },
         { status: 500 }

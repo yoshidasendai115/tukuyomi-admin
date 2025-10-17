@@ -30,7 +30,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!supabaseAdmin) {
+    if (
+      typeof supabaseAdmin !== 'object' ||
+      supabaseAdmin === null
+    ) {
       return NextResponse.json(
         { message: 'サーバー設定エラー' },
         { status: 500 }
@@ -295,7 +298,15 @@ export async function POST(request: NextRequest) {
     // 新規ユーザーの場合のみメール送信（既存ユーザーの場合はスキップ）
     if (plainPassword !== '[既存アカウント - パスワードは変更されていません]') {
       try {
-        const loginUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
+        if (!process.env.NEXT_PUBLIC_APP_URL) {
+          console.error('[Approve] NEXT_PUBLIC_APP_URL is not configured');
+          return NextResponse.json(
+            { error: 'サーバー設定エラー: NEXT_PUBLIC_APP_URL が設定されていません' },
+            { status: 500 }
+          );
+        }
+
+        const loginUrl = process.env.NEXT_PUBLIC_APP_URL;
 
         const emailResponse = await fetch(new URL('/api/emails/send', request.url).toString(), {
           method: 'POST',

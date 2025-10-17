@@ -12,6 +12,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (
+      typeof supabaseAdmin !== 'object' ||
+      supabaseAdmin === null
+    ) {
+      return NextResponse.json(
+        { error: 'サーバー設定エラー' },
+        { status: 500 }
+      );
+    }
+
     // ユーザーの存在確認
     const { data: user, error: userError } = await supabaseAdmin
       .from('admin_auth_users')
@@ -69,8 +79,17 @@ export async function POST(request: NextRequest) {
 
     console.log('[Forgot Password] Token created for user:', user.login_id);
 
+    // 環境変数チェック
+    if (!process.env.NEXT_PUBLIC_APP_URL) {
+      console.error('[Forgot Password] NEXT_PUBLIC_APP_URL is not configured');
+      return NextResponse.json(
+        { error: 'サーバー設定エラー: NEXT_PUBLIC_APP_URL が設定されていません' },
+        { status: 500 }
+      );
+    }
+
     // リセットURLを生成
-    const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002'}/admin/reset-password?token=${resetToken.token}`;
+    const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/admin/reset-password?token=${resetToken.token}`;
 
     // メール送信
     try {

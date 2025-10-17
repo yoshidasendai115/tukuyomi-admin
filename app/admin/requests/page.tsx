@@ -509,7 +509,7 @@ export default function AdminRequestsPage() {
     setShowImageModal(true);
   };
 
-  const handleVerificationUpdate = async (requestId: string, status: 'verified' | 'rejected' | 'pending', notes: string) => {
+  const handleVerificationUpdate = async (requestId: string, status: 'pending' | 'reviewing' | 'verified' | 'rejected', notes: string) => {
     try {
       const response = await fetch('/api/requests/verify', {
         method: 'POST',
@@ -1164,6 +1164,15 @@ export default function AdminRequestsPage() {
                         const newStatus = e.target.value as 'pending' | 'reviewing' | 'verified' | 'rejected';
                         let notes = selectedRequest.verification_notes || '';
 
+                        // 確認中の場合は即座にAPIコールせず、ローカル状態のみ更新
+                        if (newStatus === 'reviewing') {
+                          setSelectedRequest({
+                            ...selectedRequest,
+                            document_verification_status: newStatus
+                          });
+                          return;
+                        }
+
                         if (newStatus === 'rejected' && !notes) {
                           notes = prompt('不備理由を入力してください') || '';
                           if (!notes) {
@@ -1418,34 +1427,48 @@ export default function AdminRequestsPage() {
                       却下
                     </button>
                     <button
-                      onClick={() => handleApprove(selectedRequest)}
+                      onClick={() => {
+                        // 確認中ステータスの場合は保存ボタンとして動作
+                        if (selectedRequest.document_verification_status === 'reviewing') {
+                          handleVerificationUpdate(selectedRequest.id, 'reviewing', selectedRequest.verification_notes || '');
+                        } else {
+                          // その他の場合は承認ボタンとして動作
+                          handleApprove(selectedRequest);
+                        }
+                      }}
                       disabled={
-                        selectedRequest.document_verification_status !== 'verified' ||
-                        (
-                          (typeof selectedRequest.store_id !== 'string' || selectedRequest.store_id.length === 0) &&
-                          selectedCandidate === null &&
-                          !noStoreSelected
-                        )
+                        selectedRequest.document_verification_status === 'reviewing'
+                          ? false // 確認中の場合は常に活性化
+                          : selectedRequest.document_verification_status !== 'verified' ||
+                            (
+                              (typeof selectedRequest.store_id !== 'string' || selectedRequest.store_id.length === 0) &&
+                              selectedCandidate === null &&
+                              !noStoreSelected
+                            )
                       }
                       className={`px-4 py-2 rounded-md ${
-                        selectedRequest.document_verification_status !== 'verified' ||
-                        (
-                          (typeof selectedRequest.store_id !== 'string' || selectedRequest.store_id.length === 0) &&
-                          selectedCandidate === null &&
-                          !noStoreSelected
-                        )
+                        selectedRequest.document_verification_status === 'reviewing'
+                          ? 'bg-blue-600 text-white hover:bg-blue-700' // 確認中の場合は青色
+                          : selectedRequest.document_verification_status !== 'verified' ||
+                            (
+                              (typeof selectedRequest.store_id !== 'string' || selectedRequest.store_id.length === 0) &&
+                              selectedCandidate === null &&
+                              !noStoreSelected
+                            )
                           ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                           : 'bg-green-600 text-white hover:bg-green-700'
                       }`}
                       title={
-                        selectedRequest.document_verification_status !== 'verified'
+                        selectedRequest.document_verification_status === 'reviewing'
+                          ? '書類確認ステータスを保存します'
+                          : selectedRequest.document_verification_status !== 'verified'
                           ? '書類確認を完了してください'
                           : (typeof selectedRequest.store_id !== 'string' || selectedRequest.store_id.length === 0) && selectedCandidate === null && !noStoreSelected
                           ? '店舗マッチングを完了するか、「登録店舗無し」を選択してください'
                           : ''
                       }
                     >
-                      承認
+                      {selectedRequest.document_verification_status === 'reviewing' ? '保存' : '承認'}
                     </button>
                   </>
                 )}

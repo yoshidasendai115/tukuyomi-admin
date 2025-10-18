@@ -90,6 +90,17 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      // Freeプラン初回登録の履歴エントリを作成
+      const initialPlanHistory = [{
+        action: 'activated',
+        plan_id: 0,
+        plan_name: 'Free',
+        started_at: new Date().toISOString(),
+        ended_at: null,
+        created_at: new Date().toISOString(),
+        created_by: session.displayName || 'System'
+      }];
+
       // 新規店舗を作成（Freeプランで開始）
       const { data: newStore, error: storeError } = await supabaseAdmin
         .from('stores')
@@ -101,6 +112,7 @@ export async function POST(request: NextRequest) {
           email: requestData.applicant_email,
           is_active: true,
           subscription_plan_id: 0, // Freeプラン
+          plan_history: initialPlanHistory,
           latitude,
           longitude,
           station: requestData.nearest_station || null,
@@ -157,6 +169,17 @@ export async function POST(request: NextRequest) {
           }
         }
 
+        // Freeプラン初回登録の履歴エントリを作成
+        const initialPlanHistory = [{
+          action: 'activated',
+          plan_id: 0,
+          plan_name: 'Free',
+          started_at: new Date().toISOString(),
+          ended_at: null,
+          created_at: new Date().toISOString(),
+          created_by: session.displayName || 'System'
+        }];
+
         // 店舗が存在しない場合は新規作成（Freeプランで開始）
         const { data: newStore, error: storeError } = await supabaseAdmin
           .from('stores')
@@ -169,6 +192,7 @@ export async function POST(request: NextRequest) {
             email: requestData.applicant_email,
             is_active: true,
             subscription_plan_id: 0, // Freeプラン
+            plan_history: initialPlanHistory,
             latitude,
             longitude,
             station: requestData.nearest_station || null,

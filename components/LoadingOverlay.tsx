@@ -13,7 +13,10 @@ export default function LoadingOverlay({ isLoading, message = '処理中...' }: 
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center">
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center"
+      style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+    >
       <div className="bg-white rounded-lg p-8 flex flex-col items-center gap-4 shadow-xl">
         <svg
           className="animate-spin h-12 w-12 text-blue-600"

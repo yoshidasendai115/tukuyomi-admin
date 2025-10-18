@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
     const { data, error } = await supabaseAdmin
       .from('admin_auth_users')
       .select('*')
+      .in('role', ['super_admin', 'admin', 'moderator'])
       .order('created_at', { ascending: false });
 
     if (error) {

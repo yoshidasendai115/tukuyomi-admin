@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import LoadingOverlay from '@/components/LoadingOverlay';
 
 interface AdminUser {
   id: string;
@@ -17,6 +18,7 @@ interface AdminUser {
 export default function UsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
   const [formData, setFormData] = useState({
@@ -126,6 +128,7 @@ export default function UsersPage() {
       return;
     }
 
+    setIsDeleting(true);
     try {
       const response = await fetch(`/api/users?id=${user.id}`, {
         method: 'DELETE',
@@ -143,6 +146,8 @@ export default function UsersPage() {
     } catch (error) {
       console.error('Error:', error);
       alert('削除に失敗しました');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -413,6 +418,9 @@ export default function UsersPage() {
           </div>
         </div>
       )}
+
+      {/* 削除中のローディングオーバーレイ */}
+      <LoadingOverlay isLoading={isDeleting} message="削除中..." />
     </div>
   );
 }

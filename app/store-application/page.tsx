@@ -30,7 +30,7 @@ interface FormData {
   business_license: string;
   additional_info: string;
   business_license_image: string;
-  additional_document_type: 'late_night_license' | 'corporate_registry' | 'identity_document' | '';
+  additional_document_type: 'late_night_license' | 'corporate_registry' | '';
   additional_document_image: string;
   identity_document_image: string;
   nearest_station: string;
@@ -341,13 +341,7 @@ export default function StoreApplicationPage() {
     }
 
     // 選択した追加書類のアップロードをチェック
-    const documentImageMap: { [key: string]: string } = {
-      'late_night_license': formData.additional_document_image || '',
-      'corporate_registry': formData.additional_document_image || '',
-      'identity_document': formData.identity_document_image || ''
-    };
-
-    if (!documentImageMap[formData.additional_document_type]) {
+    if (!formData.additional_document_image) {
       alert('選択した追加書類をアップロードしてください');
       return;
     }
@@ -817,7 +811,6 @@ export default function StoreApplicationPage() {
                   <option value="">選択してください</option>
                   <option value="late_night_license">深夜酒類提供飲食店営業届出</option>
                   <option value="corporate_registry">法人登記簿謄本</option>
-                  <option value="identity_document">身分証明書</option>
                 </select>
                 {formData.additional_document_type && (
                   <>
@@ -965,8 +958,7 @@ export default function StoreApplicationPage() {
             <div className="flex justify-end">
               <button
                 type="submit"
-                disabled={isSubmitting || !formData.business_license_image || !formData.additional_document_type ||
-                  (formData.additional_document_type === 'identity_document' ? !formData.identity_document_image : !formData.additional_document_image)}
+                disabled={isSubmitting || !formData.business_license_image || !formData.additional_document_type || !formData.additional_document_image}
                 className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
                 申請を送信

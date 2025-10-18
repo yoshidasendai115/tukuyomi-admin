@@ -293,7 +293,7 @@ export async function PATCH(
         // 新しい履歴エントリを作成
         const historyEntry: any = {
           created_at: new Date().toISOString(),
-          created_by: session.userId || session.displayName || 'unknown'
+          created_by: session.displayName || 'unknown'
         };
 
         // プラン適用開始の場合

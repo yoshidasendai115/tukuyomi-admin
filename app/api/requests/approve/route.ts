@@ -102,7 +102,10 @@ export async function POST(request: NextRequest) {
           is_active: true,
           subscription_plan_id: 1, // Freeプラン
           latitude,
-          longitude
+          longitude,
+          station: requestData.nearest_station || null,
+          station_line: requestData.railway_line || null,
+          station_distance: requestData.station_distance || null
         })
         .select('id')
         .single();
@@ -167,7 +170,10 @@ export async function POST(request: NextRequest) {
             is_active: true,
             subscription_plan_id: 1, // Freeプラン
             latitude,
-            longitude
+            longitude,
+            station: requestData.nearest_station || null,
+            station_line: requestData.railway_line || null,
+            station_distance: requestData.station_distance || null
           })
           .select('id')
           .single();

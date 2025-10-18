@@ -841,13 +841,7 @@ export default function AdminRequestsPage() {
                               : 'text-red-600 hover:text-red-900'
                           }`}
                         >
-                          {processingRequestId === request.id && (
-                            <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                          )}
-                          {processingRequestId === request.id ? '削除中...' : '削除'}
+                          削除
                         </button>
                       )}
                     </div>
@@ -1108,15 +1102,9 @@ export default function AdminRequestsPage() {
                                 <button
                                   onClick={() => handleResetPassword(selectedRequest)}
                                   disabled={isResettingPassword}
-                                  className="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm disabled:bg-gray-400 flex items-center gap-2"
+                                  className="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm disabled:bg-gray-400"
                                 >
-                                  {isResettingPassword && (
-                                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                  )}
-                                  {isResettingPassword ? 'リセット中...' : 'リセット'}
+                                  リセット
                                 </button>
                               </div>
                             </div>
@@ -1166,13 +1154,7 @@ export default function AdminRequestsPage() {
                           : 'bg-orange-600 text-white hover:bg-orange-700'
                       }`}
                     >
-                      {isCancelingApproval && (
-                        <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                      )}
-                      {isCancelingApproval ? '取り消し中...' : '承認を取り消す'}
+                      承認を取り消す
                     </button>
                   </>
                 )}
@@ -1408,22 +1390,10 @@ export default function AdminRequestsPage() {
                         disabled={isSearchingStores}
                         className="w-full px-4 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center mb-4"
                       >
-                        {isSearchingStores ? (
-                          <>
-                            <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            検索中...
-                          </>
-                        ) : (
-                          <>
-                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
-                            店舗候補を検索
-                          </>
-                        )}
+                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        店舗候補を検索
                       </button>
 
                       {/* 登録店舗無しオプション */}
@@ -1547,15 +1517,7 @@ export default function AdminRequestsPage() {
                                     : 'bg-green-600 text-white hover:bg-green-700'
                                 }`}
                               >
-                                {isConfirmingMatch && (
-                                  <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                  </svg>
-                                )}
-                                {isConfirmingMatch
-                                  ? '確定中...'
-                                  : applyChangesToStore ? '情報を反映してマッチング確定' : 'マッチング確定'}
+                                {applyChangesToStore ? '情報を反映してマッチング確定' : 'マッチング確定'}
                               </button>
                             </div>
                           )}
@@ -1593,13 +1555,7 @@ export default function AdminRequestsPage() {
                           : 'bg-red-600 text-white hover:bg-red-700'
                       }`}
                     >
-                      {isProcessing && (
-                        <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                      )}
-                      {isProcessing ? '処理中...' : '却下'}
+                      却下
                     </button>
                     <button
                       onClick={async () => {
@@ -1632,7 +1588,7 @@ export default function AdminRequestsPage() {
                               !noStoreSelected
                             ))
                       }
-                      className={`px-4 py-2 rounded-md flex items-center gap-2 ${
+                      className={`px-4 py-2 rounded-md ${
                         isProcessing || isUpdatingVerification
                           ? 'bg-gray-400 cursor-not-allowed'
                           : selectedRequest.document_verification_status === 'reviewing' ||
@@ -1658,16 +1614,8 @@ export default function AdminRequestsPage() {
                           : ''
                       }
                     >
-                      {(isProcessing || isUpdatingVerification) && (
-                        <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                      )}
-                      {isProcessing || isUpdatingVerification
-                        ? '処理中...'
-                        : selectedRequest.document_verification_status === 'reviewing' ||
-                          selectedRequest.document_verification_status === 'pending'
+                      {selectedRequest.document_verification_status === 'reviewing' ||
+                       selectedRequest.document_verification_status === 'pending'
                         ? '保存'
                         : '承認'}
                     </button>
@@ -1900,15 +1848,9 @@ export default function AdminRequestsPage() {
                                 <button
                                   onClick={() => handleResetPassword(selectedRequest)}
                                   disabled={isResettingPassword}
-                                  className="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm disabled:bg-gray-400 flex items-center gap-2"
+                                  className="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm disabled:bg-gray-400"
                                 >
-                                  {isResettingPassword && (
-                                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                  )}
-                                  {isResettingPassword ? 'リセット中...' : 'リセット'}
+                                  リセット
                                 </button>
                               </div>
                             </div>
@@ -1958,13 +1900,7 @@ export default function AdminRequestsPage() {
                           : 'bg-orange-600 text-white hover:bg-orange-700'
                       }`}
                     >
-                      {isCancelingApproval && (
-                        <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                      )}
-                      {isCancelingApproval ? '取り消し中...' : '承認を取り消す'}
+                      承認を取り消す
                     </button>
                   </>
                 )}
@@ -2225,22 +2161,10 @@ export default function AdminRequestsPage() {
                   disabled={isSendingEmail}
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 flex items-center"
                 >
-                  {isSendingEmail ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      送信中...
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                      </svg>
-                      送信
-                    </>
-                  )}
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  送信
                 </button>
               </div>
             </div>

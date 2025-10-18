@@ -624,15 +624,9 @@ export default function StoreApplicationPage() {
                       type="button"
                       onClick={calculateDistance}
                       disabled={isCalculatingDistance || !formData.nearest_station || !formData.store_address}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex items-center gap-2"
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                     >
-                      {isCalculatingDistance && (
-                        <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                      )}
-                      {isCalculatingDistance ? '計算中...' : '自動計算'}
+                      自動計算
                     </button>
                   </div>
                   <p className="mt-1 text-xs text-gray-500">
@@ -773,13 +767,9 @@ export default function StoreApplicationPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                 />
                 {uploadingFiles.business_license_image && (
-                  <div className="flex items-center gap-2 text-sm text-blue-600 mt-1">
-                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
+                  <p className="text-sm text-blue-600 mt-1">
                     アップロード中...
-                  </div>
+                  </p>
                 )}
                 {formData.business_license_image && (
                   <div className="mt-2">
@@ -849,13 +839,9 @@ export default function StoreApplicationPage() {
                       </label>
                     </div>
                     {uploadingFiles.additional_document_image && (
-                      <div className="flex items-center gap-2 text-sm text-blue-600 mt-1">
-                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
+                      <p className="text-sm text-blue-600 mt-1">
                         アップロード中...
-                      </div>
+                      </p>
                     )}
                     {formData.additional_document_image && (
                       <div className="mt-2">
@@ -913,13 +899,9 @@ export default function StoreApplicationPage() {
                   </label>
                 </div>
                 {uploadingFiles.identity_document_image && (
-                  <div className="flex items-center gap-2 text-sm text-blue-600 mt-1">
-                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
+                  <p className="text-sm text-blue-600 mt-1">
                     アップロード中...
-                  </div>
+                  </p>
                 )}
                 {formData.identity_document_image && (
                   <div className="mt-2">
@@ -985,15 +967,9 @@ export default function StoreApplicationPage() {
                 type="submit"
                 disabled={isSubmitting || !formData.business_license_image || !formData.additional_document_type ||
                   (formData.additional_document_type === 'identity_document' ? !formData.identity_document_image : !formData.additional_document_image)}
-                className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
-                {isSubmitting && (
-                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                )}
-                {isSubmitting ? '送信中...' : '申請を送信'}
+                申請を送信
               </button>
             </div>
           </form>

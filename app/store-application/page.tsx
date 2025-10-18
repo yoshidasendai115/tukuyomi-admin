@@ -794,6 +794,9 @@ export default function StoreApplicationPage() {
                     <p className="text-sm text-green-600 mt-1">✓ アップロード完了</p>
                   </div>
                 )}
+                <p className="text-sm text-gray-600 mt-3">
+                  ※ 営業許可証の、公印と基本情報が記載された本体（証書）の添付をお願いいたします。
+                </p>
               </div>
 
               {/* 追加書類 */}

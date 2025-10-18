@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
           genre_id: requestData.genre_id || null,
           email: requestData.applicant_email,
           is_active: true,
-          subscription_plan_id: 1, // Freeプラン
+          subscription_plan_id: 0, // Freeプラン
           latitude,
           longitude,
           station: requestData.nearest_station || null,
@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
             genre_id: requestData.genre_id || null,
             email: requestData.applicant_email,
             is_active: true,
-            subscription_plan_id: 1, // Freeプラン
+            subscription_plan_id: 0, // Freeプラン
             latitude,
             longitude,
             station: requestData.nearest_station || null,

@@ -1020,11 +1020,9 @@ function AdminStoreEditPageContent({ params }: PageProps) {
               <div>
                 <div className="flex items-center gap-3">
                   <h1 className="text-2xl font-bold text-gray-900">店舗情報編集</h1>
-                  {store !== null && store.subscription_plan_id !== null && store.subscription_plan_id !== undefined && (
+                  {store !== null && typeof store.subscription_plan_id === 'number' && (
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
-                      store.subscription_plan_id === 0
-                        ? 'bg-blue-50 text-blue-700 border-blue-200'
-                        : store.subscription_plan_id === 1
+                      store.subscription_plan_id === 1
                         ? 'bg-amber-100 text-amber-800 border-amber-400'
                         : store.subscription_plan_id === 2
                         ? 'bg-gray-100 text-gray-800 border-gray-400'
@@ -1032,9 +1030,16 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                         ? 'bg-cyan-100 text-cyan-800 border-cyan-400'
                         : store.subscription_plan_id === 4
                         ? 'bg-yellow-100 text-yellow-800 border-yellow-400'
-                        : 'bg-purple-100 text-purple-800 border-purple-400'
+                        : store.subscription_plan_id === 5
+                        ? 'bg-purple-100 text-purple-800 border-purple-400'
+                        : 'bg-blue-50 text-blue-700 border-blue-200'
                     }`}>
-                      {getPlanName(store.subscription_plan_id)}
+                      {store.subscription_plan_id === 1 ? '🥉 Light' :
+                       store.subscription_plan_id === 2 ? '🥈 Basic' :
+                       store.subscription_plan_id === 3 ? '💎 Premium 5' :
+                       store.subscription_plan_id === 4 ? '🥇 Premium 10' :
+                       store.subscription_plan_id === 5 ? '👑 Premium 15' :
+                       'Free'}
                     </span>
                   )}
                 </div>
@@ -1439,6 +1444,17 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                 {/* SNS・Webセクション */}
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">SNS・Web</h3>
+
+                  {isFreeplan() && (
+                    <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
+                      <p className="text-sm text-amber-800">
+                        📱 <strong>Freeプラン</strong>ではSNS・Web情報の登録はご利用いただけません。
+                        <br />
+                        有料プランへのアップグレードで登録可能になります。
+                      </p>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1449,7 +1465,8 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                         name="website"
                         value={formData.website || ''}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        disabled={isFreeplan()}
+                        className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 ${isFreeplan() ? 'bg-gray-100 cursor-not-allowed text-gray-500' : ''}`}
                         placeholder="https://example.com"
                       />
                     </div>
@@ -1463,7 +1480,8 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                         name="sns_instagram"
                         value={formData.sns_instagram || ''}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        disabled={isFreeplan()}
+                        className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 ${isFreeplan() ? 'bg-gray-100 cursor-not-allowed text-gray-500' : ''}`}
                         placeholder="https://instagram.com/username"
                       />
                     </div>
@@ -1493,7 +1511,8 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                         name="sns_twitter"
                         value={formData.sns_twitter || ''}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        disabled={isFreeplan()}
+                        className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 ${isFreeplan() ? 'bg-gray-100 cursor-not-allowed text-gray-500' : ''}`}
                         placeholder="https://x.com/username"
                       />
                     </div>
@@ -1507,7 +1526,8 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                         name="line_id"
                         value={formData.line_id || ''}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        disabled={isFreeplan()}
+                        className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 ${isFreeplan() ? 'bg-gray-100 cursor-not-allowed text-gray-500' : ''}`}
                         placeholder="LINE ID"
                       />
                     </div>
@@ -1521,7 +1541,8 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                         name="sns_tiktok"
                         value={formData.sns_tiktok || ''}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        disabled={isFreeplan()}
+                        className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 ${isFreeplan() ? 'bg-gray-100 cursor-not-allowed text-gray-500' : ''}`}
                         placeholder="https://tiktok.com/@username"
                       />
                     </div>

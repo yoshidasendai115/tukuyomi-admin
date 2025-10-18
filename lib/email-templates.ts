@@ -14,7 +14,7 @@ export type EmailTemplate = {
  */
 const getAppName = () => process.env.APP_NAME || 'がるなび';
 const getFromName = () => process.env.EMAIL_FROM_NAME || 'がるなび運営チーム';
-const getSupportEmail = () => process.env.EMAIL_SUPPORT || 'support@garunavi.jp';
+const getSupportEmail = () => process.env.EMAIL_SUPPORT || 'info@garunavi.jp';
 
 /**
  * 店舗申請承認メールテンプレート
@@ -212,8 +212,8 @@ export const passwordResetEmail = (params: {
 
   <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e1e8ed; font-size: 14px; color: #7f8c8d; text-align: center;">
     <p style="margin: 0;">
-      <strong>つくよみ運営チーム</strong><br>
-      Email: support@garunavi.jp
+      <strong>${fromName}</strong><br>
+      Email: ${supportEmail}
     </p>
   </div>
 </body>

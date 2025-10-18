@@ -66,12 +66,9 @@ export async function POST(request: NextRequest) {
     // store_idが未設定または店舗が存在しない場合は新規作成
     let storeId = requestData.store_id;
 
-    // noStoreSelectedがtrueの場合は店舗作成をスキップ
-    if (noStoreSelected === true) {
-      console.log('[Approve] noStoreSelected is true, skipping store creation');
-      storeId = null;
-    } else if (!storeId) {
-      console.log('[Approve] store_id is null, creating new store');
+    // noStoreSelectedがtrueの場合、または store_idが未設定の場合は新規店舗を作成
+    if (noStoreSelected === true || !storeId) {
+      console.log('[Approve] Creating new store from request data (noStoreSelected:', noStoreSelected, ', storeId:', storeId, ')');
 
       // 住所から緯度経度を取得
       let latitude = null;
@@ -93,7 +90,7 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // 新規店舗を作成
+      // 新規店舗を作成（Freeプランで開始）
       const { data: newStore, error: storeError } = await supabaseAdmin
         .from('stores')
         .insert({
@@ -103,6 +100,7 @@ export async function POST(request: NextRequest) {
           genre_id: requestData.genre_id || null,
           email: requestData.applicant_email,
           is_active: true,
+          subscription_plan_id: 1, // Freeプラン
           latitude,
           longitude
         })
@@ -156,7 +154,7 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        // 店舗が存在しない場合は新規作成
+        // 店舗が存在しない場合は新規作成（Freeプランで開始）
         const { data: newStore, error: storeError } = await supabaseAdmin
           .from('stores')
           .insert({
@@ -167,6 +165,7 @@ export async function POST(request: NextRequest) {
             genre_id: requestData.genre_id || null,
             email: requestData.applicant_email,
             is_active: true,
+            subscription_plan_id: 1, // Freeプラン
             latitude,
             longitude
           })
@@ -234,6 +233,7 @@ export async function POST(request: NextRequest) {
           login_id: requestData.applicant_email,
           password_hash: hashedPassword,
           display_name: requestData.applicant_name,
+          email: requestData.applicant_email,
           role: 'store_owner',
           assigned_store_id: storeId,
           is_active: true

@@ -14,7 +14,7 @@ export type EmailTemplate = {
  */
 const getAppName = () => process.env.APP_NAME || 'がるなび';
 const getFromName = () => process.env.EMAIL_FROM_NAME || 'がるなび運営チーム';
-const getSupportEmail = () => process.env.EMAIL_SUPPORT || 'support@garunavi.jp';
+const getSupportEmail = () => process.env.EMAIL_SUPPORT || 'info@garunavi.jp';
 
 /**
  * 申請受付メールテンプレート

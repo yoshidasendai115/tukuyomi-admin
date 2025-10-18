@@ -31,6 +31,7 @@ interface Store {
   match_details?: string[];
   stations?: { id: string; name: string };
   genres?: { id: string; name: string };
+  subscription_plan_id?: number;
 }
 
 interface Genre {
@@ -547,6 +548,14 @@ export default function AdminRequestsPage() {
   const handleSendCredentialsEmail = async () => {
     if (!selectedRequest) return;
 
+    if (!confirm(
+      `${selectedRequest.applicant_email} にログイン情報を送信しますか？\n\n` +
+      `店舗名: ${selectedRequest.store_name}\n` +
+      `申請者: ${selectedRequest.applicant_name}`
+    )) {
+      return;
+    }
+
     setIsSendingEmail(true);
 
     try {
@@ -874,6 +883,48 @@ export default function AdminRequestsPage() {
                     <label className="block text-sm font-bold text-gray-700">住所</label>
                     <p className="mt-1 text-sm text-gray-900">{selectedRequest.store_address}</p>
                   </div>
+                  {selectedRequest.related_store && (
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700">現在のプラン</label>
+                      <p className="mt-1 text-sm text-gray-900">
+                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                          typeof selectedRequest.related_store.subscription_plan_id === 'number' &&
+                          selectedRequest.related_store.subscription_plan_id === 1
+                            ? 'bg-amber-100 text-amber-800'
+                            : typeof selectedRequest.related_store.subscription_plan_id === 'number' &&
+                              selectedRequest.related_store.subscription_plan_id === 2
+                            ? 'bg-gray-100 text-gray-800'
+                            : typeof selectedRequest.related_store.subscription_plan_id === 'number' &&
+                              selectedRequest.related_store.subscription_plan_id === 3
+                            ? 'bg-cyan-100 text-cyan-800'
+                            : typeof selectedRequest.related_store.subscription_plan_id === 'number' &&
+                              selectedRequest.related_store.subscription_plan_id === 4
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : typeof selectedRequest.related_store.subscription_plan_id === 'number' &&
+                              selectedRequest.related_store.subscription_plan_id === 5
+                            ? 'bg-purple-100 text-purple-800'
+                            : 'bg-blue-50 text-blue-700'
+                        }`}>
+                          {typeof selectedRequest.related_store.subscription_plan_id === 'number' &&
+                          selectedRequest.related_store.subscription_plan_id === 1
+                            ? 'Free'
+                            : typeof selectedRequest.related_store.subscription_plan_id === 'number' &&
+                              selectedRequest.related_store.subscription_plan_id === 2
+                            ? 'Light'
+                            : typeof selectedRequest.related_store.subscription_plan_id === 'number' &&
+                              selectedRequest.related_store.subscription_plan_id === 3
+                            ? 'Basic'
+                            : typeof selectedRequest.related_store.subscription_plan_id === 'number' &&
+                              selectedRequest.related_store.subscription_plan_id === 4
+                            ? 'Premium'
+                            : typeof selectedRequest.related_store.subscription_plan_id === 'number' &&
+                              selectedRequest.related_store.subscription_plan_id === 5
+                            ? 'Premium Plus'
+                            : 'プラン未設定'}
+                        </span>
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="border-t pt-4">
@@ -920,83 +971,97 @@ export default function AdminRequestsPage() {
                 {selectedRequest.status === 'approved' && (
                   <>
                     <h3 className="text-lg font-semibold mb-3 mt-6">ログイン情報</h3>
-                    <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
-                      <div className="space-y-3">
-                        <div>
-                          <label className="block text-sm font-bold text-gray-700">ログインURL</label>
-                          <div className="mt-1 flex items-center space-x-2">
-                            <input
-                              type="text"
-                              readOnly
-                              value={`${window.location.origin}/admin/login?email=${encodeURIComponent(selectedRequest.applicant_email)}`}
-                              className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-md text-sm text-gray-900"
-                            />
-                            <button
-                              onClick={() => {
-                                navigator.clipboard.writeText(`${window.location.origin}/admin/login?email=${encodeURIComponent(selectedRequest.applicant_email)}`);
-                                alert('URLをコピーしました');
-                              }}
-                              className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
-                            >
-                              コピー
-                            </button>
-                          </div>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-bold text-gray-700">メールアドレス（ログインID）</label>
-                          <p className="mt-1 text-sm text-gray-900">{selectedRequest.applicant_email}</p>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-bold text-gray-700">パスワード</label>
-                          <div className="mt-1 flex items-center space-x-2">
-                            <div className="relative flex-1">
-                              <input
-                                type={showPassword ? "text" : "password"}
-                                readOnly
-                                value={selectedRequest.generated_password || ''}
-                                className="w-full px-3 py-2 pr-10 bg-white border border-gray-300 rounded-md text-sm text-gray-900"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-                              >
-                                {showPassword ? (
-                                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                                  </svg>
-                                ) : (
-                                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                  </svg>
-                                )}
-                              </button>
-                            </div>
-                            <button
-                              onClick={() => handleResetPassword(selectedRequest)}
-                              disabled={isResettingPassword}
-                              className="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm disabled:bg-gray-400"
-                            >
-                              {isResettingPassword ? 'リセット中...' : 'リセット'}
-                            </button>
-                          </div>
-                        </div>
+                    {selectedRequest.related_store &&
+                     typeof selectedRequest.related_store.subscription_plan_id === 'number' &&
+                     selectedRequest.related_store.subscription_plan_id === 1 ? (
+                      <div className="bg-amber-50 border-l-4 border-amber-400 p-4 mb-4">
+                        <p className="text-sm text-amber-800">
+                          📱 <strong>Freeプラン</strong>のため、ログイン情報の管理は制限されています。
+                          <br />
+                          有料プランへのアップグレード後にご利用可能です。
+                        </p>
                       </div>
-                    </div>
+                    ) : (
+                      <>
+                        <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
+                          <div className="space-y-3">
+                            <div>
+                              <label className="block text-sm font-bold text-gray-700">ログインURL</label>
+                              <div className="mt-1 flex items-center space-x-2">
+                                <input
+                                  type="text"
+                                  readOnly
+                                  value={`${window.location.origin}/admin/login?email=${encodeURIComponent(selectedRequest.applicant_email)}`}
+                                  className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-md text-sm text-gray-900"
+                                />
+                                <button
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(`${window.location.origin}/admin/login?email=${encodeURIComponent(selectedRequest.applicant_email)}`);
+                                    alert('URLをコピーしました');
+                                  }}
+                                  className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
+                                >
+                                  コピー
+                                </button>
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-bold text-gray-700">メールアドレス（ログインID）</label>
+                              <p className="mt-1 text-sm text-gray-900">{selectedRequest.applicant_email}</p>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-bold text-gray-700">パスワード</label>
+                              <div className="mt-1 flex items-center space-x-2">
+                                <div className="relative flex-1">
+                                  <input
+                                    type={showPassword ? "text" : "password"}
+                                    readOnly
+                                    value={selectedRequest.generated_password || ''}
+                                    className="w-full px-3 py-2 pr-10 bg-white border border-gray-300 rounded-md text-sm text-gray-900"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                                  >
+                                    {showPassword ? (
+                                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                      </svg>
+                                    ) : (
+                                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                      </svg>
+                                    )}
+                                  </button>
+                                </div>
+                                <button
+                                  onClick={() => handleResetPassword(selectedRequest)}
+                                  disabled={isResettingPassword}
+                                  className="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm disabled:bg-gray-400"
+                                >
+                                  {isResettingPassword ? 'リセット中...' : 'リセット'}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
 
-                    {/* メール送信ボタン */}
-                    <div className="mt-4">
-                      <button
-                        onClick={() => setShowEmailPreviewModal(true)}
-                        className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center justify-center"
-                      >
-                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                        </svg>
-                        店舗ユーザーに送信
-                      </button>
-                    </div>
+                        {/* メール送信ボタン */}
+                        <div className="mt-4">
+                          <button
+                            onClick={() => setShowEmailPreviewModal(true)}
+                            className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center justify-center"
+                          >
+                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                            店舗ユーザーに送信
+                          </button>
+                        </div>
+                      </>
+                    )}
 
                     <h3 className="text-lg font-semibold mb-3 mt-6">承認済みアクション</h3>
                     <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
@@ -1645,83 +1710,97 @@ export default function AdminRequestsPage() {
                 {selectedRequest.status === 'approved' && (
                   <>
                     <h3 className="text-lg font-semibold mb-3 mt-6">ログイン情報</h3>
-                    <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
-                      <div className="space-y-3">
-                        <div>
-                          <label className="block text-sm font-bold text-gray-700">ログインURL</label>
-                          <div className="mt-1 flex items-center space-x-2">
-                            <input
-                              type="text"
-                              readOnly
-                              value={`${window.location.origin}/admin/login?email=${encodeURIComponent(selectedRequest.applicant_email)}`}
-                              className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-md text-sm text-gray-900"
-                            />
-                            <button
-                              onClick={() => {
-                                navigator.clipboard.writeText(`${window.location.origin}/admin/login?email=${encodeURIComponent(selectedRequest.applicant_email)}`);
-                                alert('URLをコピーしました');
-                              }}
-                              className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
-                            >
-                              コピー
-                            </button>
-                          </div>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-bold text-gray-700">メールアドレス（ログインID）</label>
-                          <p className="mt-1 text-sm text-gray-900">{selectedRequest.applicant_email}</p>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-bold text-gray-700">パスワード</label>
-                          <div className="mt-1 flex items-center space-x-2">
-                            <div className="relative flex-1">
-                              <input
-                                type={showPassword ? "text" : "password"}
-                                readOnly
-                                value={selectedRequest.generated_password || ''}
-                                className="w-full px-3 py-2 pr-10 bg-white border border-gray-300 rounded-md text-sm text-gray-900"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-                              >
-                                {showPassword ? (
-                                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                                  </svg>
-                                ) : (
-                                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                  </svg>
-                                )}
-                              </button>
-                            </div>
-                            <button
-                              onClick={() => handleResetPassword(selectedRequest)}
-                              disabled={isResettingPassword}
-                              className="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm disabled:bg-gray-400"
-                            >
-                              {isResettingPassword ? 'リセット中...' : 'リセット'}
-                            </button>
-                          </div>
-                        </div>
+                    {selectedRequest.related_store &&
+                     typeof selectedRequest.related_store.subscription_plan_id === 'number' &&
+                     selectedRequest.related_store.subscription_plan_id === 1 ? (
+                      <div className="bg-amber-50 border-l-4 border-amber-400 p-4 mb-4">
+                        <p className="text-sm text-amber-800">
+                          📱 <strong>Freeプラン</strong>のため、ログイン情報の管理は制限されています。
+                          <br />
+                          有料プランへのアップグレード後にご利用可能です。
+                        </p>
                       </div>
-                    </div>
+                    ) : (
+                      <>
+                        <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
+                          <div className="space-y-3">
+                            <div>
+                              <label className="block text-sm font-bold text-gray-700">ログインURL</label>
+                              <div className="mt-1 flex items-center space-x-2">
+                                <input
+                                  type="text"
+                                  readOnly
+                                  value={`${window.location.origin}/admin/login?email=${encodeURIComponent(selectedRequest.applicant_email)}`}
+                                  className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-md text-sm text-gray-900"
+                                />
+                                <button
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(`${window.location.origin}/admin/login?email=${encodeURIComponent(selectedRequest.applicant_email)}`);
+                                    alert('URLをコピーしました');
+                                  }}
+                                  className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
+                                >
+                                  コピー
+                                </button>
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-bold text-gray-700">メールアドレス（ログインID）</label>
+                              <p className="mt-1 text-sm text-gray-900">{selectedRequest.applicant_email}</p>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-bold text-gray-700">パスワード</label>
+                              <div className="mt-1 flex items-center space-x-2">
+                                <div className="relative flex-1">
+                                  <input
+                                    type={showPassword ? "text" : "password"}
+                                    readOnly
+                                    value={selectedRequest.generated_password || ''}
+                                    className="w-full px-3 py-2 pr-10 bg-white border border-gray-300 rounded-md text-sm text-gray-900"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                                  >
+                                    {showPassword ? (
+                                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                      </svg>
+                                    ) : (
+                                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                      </svg>
+                                    )}
+                                  </button>
+                                </div>
+                                <button
+                                  onClick={() => handleResetPassword(selectedRequest)}
+                                  disabled={isResettingPassword}
+                                  className="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm disabled:bg-gray-400"
+                                >
+                                  {isResettingPassword ? 'リセット中...' : 'リセット'}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
 
-                    {/* メール送信ボタン */}
-                    <div className="mt-4">
-                      <button
-                        onClick={() => setShowEmailPreviewModal(true)}
-                        className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center justify-center"
-                      >
-                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                        </svg>
-                        店舗ユーザーに送信
-                      </button>
-                    </div>
+                        {/* メール送信ボタン */}
+                        <div className="mt-4">
+                          <button
+                            onClick={() => setShowEmailPreviewModal(true)}
+                            className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center justify-center"
+                          >
+                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                            店舗ユーザーに送信
+                          </button>
+                        </div>
+                      </>
+                    )}
 
                     <h3 className="text-lg font-semibold mb-3 mt-6">承認済みアクション</h3>
                     <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">

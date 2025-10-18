@@ -45,7 +45,7 @@ export async function DELETE(
     // 申請データを取得して却下済みか確認
     const { data: requestData, error: fetchError } = await supabaseAdmin
       .from('admin_store_edit_requests')
-      .select('id, status, store_name')
+      .select('id, status, store_name, applicant_email')
       .eq('id', id)
       .single();
 
@@ -89,6 +89,68 @@ export async function DELETE(
       );
     }
 
+    // 関連するadmin_auth_usersの削除チェック
+    let deletedUser = false;
+    if (
+      typeof requestData.applicant_email === 'string' &&
+      requestData.applicant_email.length > 0
+    ) {
+      try {
+        // 同じメールアドレスで承認済みの申請が他にあるかチェック
+        const { data: approvedRequests, error: approvedError } = await supabaseAdmin
+          .from('admin_store_edit_requests')
+          .select('id')
+          .eq('applicant_email', requestData.applicant_email)
+          .eq('status', 'approved')
+          .limit(1);
+
+        if (approvedError !== null) {
+          console.error('[Delete] Error checking approved requests:', approvedError);
+        }
+
+        // 承認済み申請がない場合のみユーザーを削除
+        if (
+          typeof approvedRequests === 'object' &&
+          approvedRequests !== null &&
+          (approvedRequests.length === 0 || approvedRequests.length === undefined)
+        ) {
+          const { data: user, error: userError } = await supabaseAdmin
+            .from('admin_auth_users')
+            .select('id, role')
+            .eq('login_id', requestData.applicant_email)
+            .single();
+
+          if (userError !== null) {
+            console.log('[Delete] No user found or error:', userError.message);
+          }
+
+          // store_ownerロールのみ削除対象
+          if (
+            typeof user === 'object' &&
+            user !== null &&
+            user.role === 'store_owner'
+          ) {
+            const { error: deleteUserError } = await supabaseAdmin
+              .from('admin_auth_users')
+              .delete()
+              .eq('id', user.id);
+
+            if (deleteUserError !== null) {
+              console.error('[Delete] Error deleting user:', deleteUserError);
+            } else {
+              console.log('[Delete] Deleted related user:', requestData.applicant_email);
+              deletedUser = true;
+            }
+          }
+        } else {
+          console.log('[Delete] User has approved requests, skipping user deletion');
+        }
+      } catch (error) {
+        console.error('[Delete] Error in user deletion process:', error);
+        // ユーザー削除失敗でも申請削除は成功扱い
+      }
+    }
+
     // アクセスログに記録
     await supabaseAdmin
       .from('admin_access_logs')
@@ -97,7 +159,9 @@ export async function DELETE(
         details: {
           request_id: id,
           store_name: requestData.store_name,
-          admin_user: session.loginId
+          admin_user: session.loginId,
+          deleted_user: deletedUser,
+          applicant_email: requestData.applicant_email
         },
         ip_address: request.headers.get('x-forwarded-for') ||
                      request.headers.get('x-real-ip') ||

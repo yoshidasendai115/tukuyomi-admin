@@ -9,6 +9,12 @@ interface Genre {
   display_order: number;
 }
 
+interface Station {
+  id: string;
+  name: string;
+  railway_lines: string[];
+}
+
 interface FormData {
   store_name: string;
   store_address: string;
@@ -26,6 +32,9 @@ interface FormData {
   additional_document_type: 'late_night_license' | 'corporate_registry' | 'identity_document' | '';
   additional_document_image: string;
   identity_document_image: string;
+  nearest_station: string;
+  railway_line: string;
+  station_distance: string;
 }
 
 export default function StoreApplicationPage() {
@@ -45,38 +54,171 @@ export default function StoreApplicationPage() {
     business_license_image: '',
     additional_document_type: '',
     additional_document_image: '',
-    identity_document_image: ''
+    identity_document_image: '',
+    nearest_station: '',
+    railway_line: '',
+    station_distance: ''
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState<{[key: string]: boolean}>({});
   const [genres, setGenres] = useState<Genre[]>([]);
+  const [phoneErrors, setPhoneErrors] = useState<{
+    store_phone: string;
+    applicant_phone: string;
+  }>({
+    store_phone: '',
+    applicant_phone: ''
+  });
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
+  // 立地・アクセス関連のstate
+  const [stations, setStations] = useState<Station[]>([]);
+  const [railwayLines, setRailwayLines] = useState<string[]>([]);
+  const [stationSuggestions, setStationSuggestions] = useState<Station[]>([]);
+  const [showStationSuggestions, setShowStationSuggestions] = useState(false);
+  const [railwaySuggestions, setRailwaySuggestions] = useState<string[]>([]);
+  const [showRailwaySuggestions, setShowRailwaySuggestions] = useState(false);
+  const [isCalculatingDistance, setIsCalculatingDistance] = useState(false);
 
   useEffect(() => {
-    fetchGenres();
+    fetchMasterData();
   }, []);
 
-  const fetchGenres = async () => {
+  const fetchMasterData = async () => {
     try {
       const response = await fetch('/api/masters/data');
-      const { genres: genresData, error } = await response.json();
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(error || 'Failed to fetch genres');
+        throw new Error(data.error || 'Failed to fetch master data');
       }
 
-      setGenres(genresData || []);
+      setGenres(data.genres || []);
+      setStations(data.stations || []);
+      setRailwayLines(data.railwayLines || []);
     } catch (error) {
-      console.error('Error fetching genres:', error);
+      console.error('Error fetching master data:', error);
     }
+  };
+
+  // 電話番号バリデーション（ハイフン必須）
+  const validatePhoneNumber = (phone: string): boolean => {
+    // 日本の電話番号形式（ハイフン付き）
+    // 固定電話: 03-1234-5678, 0120-123-456 など
+    // 携帯電話: 090-1234-5678, 080-1234-5678 など
+    const phoneRegex = /^0\d{1,4}-\d{1,4}-\d{4}$/;
+    return phoneRegex.test(phone);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+
+    // 電話番号フィールドの場合はバリデーション
+    if (name === 'store_phone' || name === 'applicant_phone') {
+      if (
+        typeof value === 'string' &&
+        value.length > 0 &&
+        !validatePhoneNumber(value)
+      ) {
+        setPhoneErrors(prev => ({
+          ...prev,
+          [name]: 'ハイフン付きで入力してください（例: 03-1234-5678, 090-1234-5678）'
+        }));
+      } else {
+        setPhoneErrors(prev => ({
+          ...prev,
+          [name]: ''
+        }));
+      }
+    }
+
+    // 駅名入力時のサジェスト表示
+    if (name === 'nearest_station') {
+      if (typeof value === 'string' && value.length > 0 && stations.length > 0) {
+        const filtered = stations.filter(station =>
+          station.name.toLowerCase().includes(value.toLowerCase())
+        );
+        setStationSuggestions(filtered.slice(0, 5));
+        setShowStationSuggestions(true);
+      } else {
+        setShowStationSuggestions(false);
+      }
+    }
+
+    // 路線入力時のサジェスト表示
+    if (name === 'railway_line') {
+      if (typeof value === 'string' && value.length > 0 && railwayLines.length > 0) {
+        const filtered = railwayLines.filter(line =>
+          line.toLowerCase().includes(value.toLowerCase())
+        );
+        setRailwaySuggestions(filtered.slice(0, 5));
+        setShowRailwaySuggestions(true);
+      } else {
+        setShowRailwaySuggestions(false);
+      }
+    }
+
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
+  };
+
+  // 駅選択時のハンドラー
+  const handleStationSelect = (station: Station, selectedLine: string | null = null) => {
+    setFormData(prev => ({
+      ...prev,
+      nearest_station: station.name,
+      railway_line: selectedLine || (station.railway_lines.length > 0 ? station.railway_lines[0] : '')
+    }));
+    setShowStationSuggestions(false);
+  };
+
+  // 路線選択時のハンドラー
+  const handleRailwaySelect = (line: string) => {
+    setFormData(prev => ({
+      ...prev,
+      railway_line: line
+    }));
+    setShowRailwaySuggestions(false);
+  };
+
+  // 距離自動計算
+  const calculateDistance = async () => {
+    const station = formData.nearest_station;
+    const address = formData.store_address;
+
+    if (!station || !address) {
+      alert('駅名と住所の両方が入力されている必要があります');
+      return;
+    }
+
+    setIsCalculatingDistance(true);
+    try {
+      const response = await fetch(
+        `/api/maps/distance?station=${encodeURIComponent(station)}&address=${encodeURIComponent(address)}`
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || '距離の計算に失敗しました');
+      }
+
+      const data = await response.json();
+
+      setFormData(prev => ({
+        ...prev,
+        station_distance: data.formattedDistance
+      }));
+
+      alert(`距離を自動計算しました: ${data.formattedDistance}`);
+    } catch (error) {
+      console.error('Error calculating distance:', error);
+      alert(error instanceof Error ? error.message : '距離の計算中にエラーが発生しました');
+    } finally {
+      setIsCalculatingDistance(false);
+    }
   };
 
   const handleFileUpload = async (file: File, fieldName: string) => {
@@ -122,6 +264,17 @@ export default function StoreApplicationPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // 電話番号のバリデーション
+    if (!validatePhoneNumber(formData.store_phone)) {
+      alert('店舗電話番号をハイフン付きで入力してください（例: 03-1234-5678）');
+      return;
+    }
+
+    if (!validatePhoneNumber(formData.applicant_phone)) {
+      alert('申請者電話番号をハイフン付きで入力してください（例: 090-1234-5678）');
+      return;
+    }
+
     if (!formData.business_license_image) {
       alert('飲食店営業許可証の画像をアップロードしてください');
       return;
@@ -165,27 +318,9 @@ export default function StoreApplicationPage() {
       }
 
       const result = await response.json();
-      alert(result.message);
 
-      // フォームをリセット
-      setFormData({
-        store_name: '',
-        store_address: '',
-        store_phone: '',
-        business_type: 'restaurant',
-        applicant_name: '',
-        applicant_email: '',
-        applicant_phone: '',
-        applicant_role: '',
-        license_holder_name: '',
-        applicant_relationship: 'owner',
-        business_license: '',
-        additional_info: '',
-        business_license_image: '',
-        additional_document_type: '',
-        additional_document_image: '',
-        identity_document_image: ''
-      });
+      // 送信成功：サンクスページを表示
+      setIsSubmitted(true);
 
     } catch (error) {
       console.error('Submit error:', error);
@@ -194,6 +329,50 @@ export default function StoreApplicationPage() {
       setIsSubmitting(false);
     }
   };
+
+  // 送信完了後はサンクスページを表示
+  if (isSubmitted) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8 flex items-center justify-center">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-white rounded-lg shadow-lg p-8 text-center">
+            <div className="mb-6">
+              <svg className="mx-auto h-16 w-16 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">ご登録ありがとうございます</h1>
+            <p className="text-lg text-gray-700 mb-6">
+              店舗編集権限申請を受け付けました。
+            </p>
+            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 text-left">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-blue-800 mb-2">今後の流れ</h3>
+                  <div className="text-sm text-blue-700 space-y-2">
+                    <p>1. ご登録いただいたメールアドレスに受付確認メールをお送りしました</p>
+                    <p>2. 管理者が申請内容と書類を確認いたします（2〜3営業日）</p>
+                    <p>3. 承認後、ログイン情報をメールでお送りします</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              ご不明な点がございましたら、お気軽にお問い合わせください。
+            </p>
+            <p className="text-xs text-gray-500">
+              このページは閉じていただいて構いません。
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -229,8 +408,14 @@ export default function StoreApplicationPage() {
                     value={formData.store_phone}
                     onChange={handleInputChange}
                     required
-                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                    placeholder="例: 03-1234-5678"
+                    className={`mt-1 w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 ${
+                      phoneErrors.store_phone.length > 0 ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   />
+                  {phoneErrors.store_phone.length > 0 && (
+                    <p className="text-sm text-red-600 mt-1">{phoneErrors.store_phone}</p>
+                  )}
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700">
@@ -263,6 +448,111 @@ export default function StoreApplicationPage() {
                       </option>
                     ))}
                   </select>
+                </div>
+              </div>
+            </div>
+
+            {/* 立地・アクセス */}
+            <div className="border-b pb-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">立地・アクセス</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="relative">
+                  <label className="block text-sm font-medium text-gray-700">
+                    最寄り駅
+                  </label>
+                  <input
+                    type="text"
+                    name="nearest_station"
+                    value={formData.nearest_station}
+                    onChange={handleInputChange}
+                    placeholder="駅名を入力"
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  />
+                  {showStationSuggestions && stationSuggestions.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-80 overflow-y-auto">
+                      {stationSuggestions.map(station => (
+                        <div key={station.id} className="border-b border-gray-100 last:border-b-0">
+                          {station.railway_lines.length > 1 ? (
+                            <div className="px-3 py-2">
+                              {station.railway_lines.map((line) => (
+                                <button
+                                  key={`${station.id}-${line}`}
+                                  type="button"
+                                  onClick={() => handleStationSelect(station, line)}
+                                  className="w-full text-left px-2 py-1 text-sm hover:bg-gray-100 cursor-pointer mb-1"
+                                >
+                                  {line} {station.name}
+                                </button>
+                              ))}
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleStationSelect(station, null)}
+                              className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 cursor-pointer"
+                            >
+                              {station.railway_lines[0] || ''} {station.name}
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="relative">
+                  <label className="block text-sm font-medium text-gray-700">
+                    路線
+                  </label>
+                  <input
+                    type="text"
+                    name="railway_line"
+                    value={formData.railway_line}
+                    onChange={handleInputChange}
+                    placeholder="路線名を入力"
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  />
+                  {showRailwaySuggestions && railwaySuggestions.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
+                      {railwaySuggestions.map(line => (
+                        <button
+                          key={line}
+                          type="button"
+                          onClick={() => handleRailwaySelect(line)}
+                          className="w-full px-3 py-2 text-left hover:bg-gray-100 focus:bg-gray-100"
+                        >
+                          {line}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    駅からの距離
+                  </label>
+                  <div className="flex space-x-2 mt-1">
+                    <input
+                      type="text"
+                      name="station_distance"
+                      value={formData.station_distance}
+                      onChange={handleInputChange}
+                      placeholder="例: 徒歩5分"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                    />
+                    <button
+                      type="button"
+                      onClick={calculateDistance}
+                      disabled={isCalculatingDistance || !formData.nearest_station || !formData.store_address}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                    >
+                      {isCalculatingDistance ? '計算中...' : '自動計算'}
+                    </button>
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500">
+                    ※ 駅名と住所が入力されている場合、自動計算ボタンで徒歩時間を取得できます
+                  </p>
                 </div>
               </div>
             </div>
@@ -321,8 +611,14 @@ export default function StoreApplicationPage() {
                     value={formData.applicant_phone}
                     onChange={handleInputChange}
                     required
-                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                    placeholder="例: 090-1234-5678"
+                    className={`mt-1 w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 ${
+                      phoneErrors.applicant_phone.length > 0 ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   />
+                  {phoneErrors.applicant_phone.length > 0 && (
+                    <p className="text-sm text-red-600 mt-1">{phoneErrors.applicant_phone}</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">

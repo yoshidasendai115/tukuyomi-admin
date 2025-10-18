@@ -69,7 +69,10 @@ export async function POST(request: NextRequest) {
       additional_document_image,
       identity_document_image,
       license_holder_name,
-      applicant_relationship
+      applicant_relationship,
+      nearest_station,
+      railway_line,
+      station_distance
     } = body;
 
     // 必須項目チェック
@@ -107,6 +110,9 @@ export async function POST(request: NextRequest) {
         identity_document_image,
         license_holder_name: license_holder_name || applicant_name,
         applicant_relationship: applicant_relationship || 'owner',
+        nearest_station: nearest_station || null,
+        railway_line: railway_line || null,
+        station_distance: station_distance || null,
         status: 'pending',
         document_verification_status: 'pending'
       })

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import LoadingOverlay from '@/components/LoadingOverlay';
 
 interface Store {
   id: string;
@@ -100,6 +101,12 @@ export default function AdminRequestsPage() {
   const [activeTab, setActiveTab] = useState<'info' | 'documents' | 'matching'>('info');
   const [isSearchingStores, setIsSearchingStores] = useState(false);
   const [noStoreSelected, setNoStoreSelected] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingRequestId, setProcessingRequestId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isCancelingApproval, setIsCancelingApproval] = useState(false);
+  const [isUpdatingVerification, setIsUpdatingVerification] = useState(false);
+  const [isConfirmingMatch, setIsConfirmingMatch] = useState(false);
   const modalContentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -162,6 +169,10 @@ export default function AdminRequestsPage() {
   };
 
   const handleApprove = async (request: StoreEditRequest) => {
+    if (isProcessing || processingRequestId === request.id) return; // 二重送信防止
+
+    setIsProcessing(true);
+    setProcessingRequestId(request.id);
     try {
       // selectedCandidateが選択されている場合、先にマッチング確定を行う
       if (selectedCandidate !== null && (typeof request.store_id !== 'string' || request.store_id.length === 0)) {
@@ -213,11 +224,18 @@ export default function AdminRequestsPage() {
       setNoStoreSelected(false);
     } catch (error) {
       console.error('Error approving request:', error);
-      alert('承認処理中にエラーが発生しました');
+      alert(error instanceof Error ? error.message : '承認処理中にエラーが発生しました');
+    } finally {
+      setIsProcessing(false);
+      setProcessingRequestId(null);
     }
   };
 
   const handleCancelApproval = async (request: StoreEditRequest) => {
+    if (isCancelingApproval || processingRequestId === request.id) return; // 二重送信防止
+
+    setIsCancelingApproval(true);
+    setProcessingRequestId(request.id);
     try {
       const response = await fetch('/api/requests/cancel-approval', {
         method: 'POST',
@@ -245,6 +263,9 @@ export default function AdminRequestsPage() {
     } catch (error) {
       console.error('Error canceling approval:', error);
       alert('承認取り消し中にエラーが発生しました');
+    } finally {
+      setIsCancelingApproval(false);
+      setProcessingRequestId(null);
     }
   };
 
@@ -253,7 +274,10 @@ export default function AdminRequestsPage() {
       return;
     }
 
+    if (isResettingPassword || processingRequestId === request.id) return; // 二重送信防止
+
     setIsResettingPassword(true);
+    setProcessingRequestId(request.id);
 
     try {
       const response = await fetch('/api/requests/reset-password', {
@@ -295,6 +319,7 @@ export default function AdminRequestsPage() {
       alert('パスワードリセット中にエラーが発生しました');
     } finally {
       setIsResettingPassword(false);
+      setProcessingRequestId(null);
     }
   };
 
@@ -304,6 +329,10 @@ export default function AdminRequestsPage() {
       return;
     }
 
+    if (isProcessing || processingRequestId === request.id) return; // 二重送信防止
+
+    setIsProcessing(true);
+    setProcessingRequestId(request.id);
     try {
       const response = await fetch('/api/requests/reject', {
         method: 'POST',
@@ -336,6 +365,9 @@ export default function AdminRequestsPage() {
     } catch (error) {
       console.error('Error rejecting request:', error);
       alert('却下処理中にエラーが発生しました');
+    } finally {
+      setIsProcessing(false);
+      setProcessingRequestId(null);
     }
   };
 
@@ -345,6 +377,10 @@ export default function AdminRequestsPage() {
       return;
     }
 
+    if (processingRequestId === requestId) return; // 二重送信防止
+
+    setProcessingRequestId(requestId);
+    setIsDeleting(true);
     try {
       const response = await fetch(`/api/requests/${requestId}`, {
         method: 'DELETE',
@@ -360,11 +396,16 @@ export default function AdminRequestsPage() {
     } catch (error) {
       console.error('Error deleting request:', error);
       alert('削除処理中にエラーが発生しました');
+    } finally {
+      setIsDeleting(false);
+      setProcessingRequestId(null);
     }
   };
 
   // 店舗候補を検索（タブ内で使用）
   const handleSearchStoreCandidates = async (request: StoreEditRequest) => {
+    if (isSearchingStores) return; // 二重送信防止
+
     setIsSearchingStores(true);
     try {
       const response = await fetch(`/api/requests/${request.id}/search-stores`, {
@@ -402,6 +443,9 @@ export default function AdminRequestsPage() {
       return;
     }
 
+    if (isConfirmingMatch) return; // 二重送信防止
+
+    setIsConfirmingMatch(true);
     try {
       const response = await fetch(`/api/requests/${selectedRequest.id}/confirm-match`, {
         method: 'POST',
@@ -435,6 +479,8 @@ export default function AdminRequestsPage() {
     } catch (error) {
       console.error('Error confirming match:', error);
       alert('マッチング確定中にエラーが発生しました');
+    } finally {
+      setIsConfirmingMatch(false);
     }
   };
 
@@ -511,6 +557,9 @@ export default function AdminRequestsPage() {
   };
 
   const handleVerificationUpdate = async (requestId: string, status: 'pending' | 'reviewing' | 'verified' | 'rejected', notes: string) => {
+    if (isUpdatingVerification) return; // 二重送信防止
+
+    setIsUpdatingVerification(true);
     try {
       const response = await fetch('/api/requests/verify', {
         method: 'POST',
@@ -542,6 +591,8 @@ export default function AdminRequestsPage() {
     } catch (error) {
       console.error('Error updating verification:', error);
       alert('エラーが発生しました');
+    } finally {
+      setIsUpdatingVerification(false);
     }
   };
 
@@ -555,6 +606,8 @@ export default function AdminRequestsPage() {
     )) {
       return;
     }
+
+    if (isSendingEmail) return; // 二重送信防止
 
     setIsSendingEmail(true);
 
@@ -781,9 +834,20 @@ export default function AdminRequestsPage() {
                       {statusFilter === 'rejected' && request.status === 'rejected' && (
                         <button
                           onClick={() => handleDelete(request.id, request.store_name)}
-                          className="text-red-600 hover:text-red-900"
+                          disabled={processingRequestId === request.id}
+                          className={`flex items-center gap-2 ${
+                            processingRequestId === request.id
+                              ? 'text-gray-400 cursor-not-allowed'
+                              : 'text-red-600 hover:text-red-900'
+                          }`}
                         >
-                          削除
+                          {processingRequestId === request.id && (
+                            <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                          )}
+                          {processingRequestId === request.id ? '削除中...' : '削除'}
                         </button>
                       )}
                     </div>
@@ -795,6 +859,11 @@ export default function AdminRequestsPage() {
           </div>
         </div>
       </div>
+
+      {/* グローバルローディングオーバーレイ */}
+      <LoadingOverlay
+        isLoading={isProcessing || isDeleting || isResettingPassword || isCancelingApproval || isUpdatingVerification || isConfirmingMatch}
+      />
 
       {/* 詳細モーダル */}
       {showModal && selectedRequest && (
@@ -1039,8 +1108,14 @@ export default function AdminRequestsPage() {
                                 <button
                                   onClick={() => handleResetPassword(selectedRequest)}
                                   disabled={isResettingPassword}
-                                  className="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm disabled:bg-gray-400"
+                                  className="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm disabled:bg-gray-400 flex items-center gap-2"
                                 >
+                                  {isResettingPassword && (
+                                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                  )}
                                   {isResettingPassword ? 'リセット中...' : 'リセット'}
                                 </button>
                               </div>
@@ -1084,9 +1159,20 @@ export default function AdminRequestsPage() {
                           handleCancelApproval(selectedRequest);
                         }
                       }}
-                      className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700"
+                      disabled={isCancelingApproval}
+                      className={`px-4 py-2 rounded-md flex items-center gap-2 ${
+                        isCancelingApproval
+                          ? 'bg-gray-400 cursor-not-allowed'
+                          : 'bg-orange-600 text-white hover:bg-orange-700'
+                      }`}
                     >
-                      承認を取り消す
+                      {isCancelingApproval && (
+                        <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      )}
+                      {isCancelingApproval ? '取り消し中...' : '承認を取り消す'}
                     </button>
                   </>
                 )}
@@ -1454,9 +1540,22 @@ export default function AdminRequestsPage() {
 
                               <button
                                 onClick={() => handleConfirmMatch(selectedCandidate.id, applyChangesToStore)}
-                                className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                                disabled={isConfirmingMatch}
+                                className={`w-full px-4 py-2 rounded-md flex items-center justify-center gap-2 ${
+                                  isConfirmingMatch
+                                    ? 'bg-gray-400 cursor-not-allowed'
+                                    : 'bg-green-600 text-white hover:bg-green-700'
+                                }`}
                               >
-                                {applyChangesToStore ? '情報を反映してマッチング確定' : 'マッチング確定'}
+                                {isConfirmingMatch && (
+                                  <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                  </svg>
+                                )}
+                                {isConfirmingMatch
+                                  ? '確定中...'
+                                  : applyChangesToStore ? '情報を反映してマッチング確定' : 'マッチング確定'}
                               </button>
                             </div>
                           )}
@@ -1487,9 +1586,20 @@ export default function AdminRequestsPage() {
                           handleReject(selectedRequest);
                         }
                       }}
-                      className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                      disabled={isProcessing}
+                      className={`px-4 py-2 rounded-md flex items-center gap-2 ${
+                        isProcessing
+                          ? 'bg-gray-400 cursor-not-allowed'
+                          : 'bg-red-600 text-white hover:bg-red-700'
+                      }`}
                     >
-                      却下
+                      {isProcessing && (
+                        <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      )}
+                      {isProcessing ? '処理中...' : '却下'}
                     </button>
                     <button
                       onClick={async () => {
@@ -1510,7 +1620,9 @@ export default function AdminRequestsPage() {
                         }
                       }}
                       disabled={
-                        selectedRequest.document_verification_status === 'reviewing' ||
+                        isProcessing ||
+                        isUpdatingVerification ||
+                        (selectedRequest.document_verification_status === 'reviewing' ||
                         selectedRequest.document_verification_status === 'pending'
                           ? false // 確認中または未確認の場合は常に活性化
                           : selectedRequest.document_verification_status !== 'verified' ||
@@ -1518,11 +1630,13 @@ export default function AdminRequestsPage() {
                               (typeof selectedRequest.store_id !== 'string' || selectedRequest.store_id.length === 0) &&
                               selectedCandidate === null &&
                               !noStoreSelected
-                            )
+                            ))
                       }
-                      className={`px-4 py-2 rounded-md ${
-                        selectedRequest.document_verification_status === 'reviewing' ||
-                        selectedRequest.document_verification_status === 'pending'
+                      className={`px-4 py-2 rounded-md flex items-center gap-2 ${
+                        isProcessing || isUpdatingVerification
+                          ? 'bg-gray-400 cursor-not-allowed'
+                          : selectedRequest.document_verification_status === 'reviewing' ||
+                            selectedRequest.document_verification_status === 'pending'
                           ? 'bg-blue-600 text-white hover:bg-blue-700' // 確認中または未確認の場合は青色
                           : selectedRequest.document_verification_status !== 'verified' ||
                             (
@@ -1544,8 +1658,16 @@ export default function AdminRequestsPage() {
                           : ''
                       }
                     >
-                      {selectedRequest.document_verification_status === 'reviewing' ||
-                       selectedRequest.document_verification_status === 'pending'
+                      {(isProcessing || isUpdatingVerification) && (
+                        <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      )}
+                      {isProcessing || isUpdatingVerification
+                        ? '処理中...'
+                        : selectedRequest.document_verification_status === 'reviewing' ||
+                          selectedRequest.document_verification_status === 'pending'
                         ? '保存'
                         : '承認'}
                     </button>
@@ -1778,8 +1900,14 @@ export default function AdminRequestsPage() {
                                 <button
                                   onClick={() => handleResetPassword(selectedRequest)}
                                   disabled={isResettingPassword}
-                                  className="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm disabled:bg-gray-400"
+                                  className="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm disabled:bg-gray-400 flex items-center gap-2"
                                 >
+                                  {isResettingPassword && (
+                                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                  )}
                                   {isResettingPassword ? 'リセット中...' : 'リセット'}
                                 </button>
                               </div>
@@ -1823,9 +1951,20 @@ export default function AdminRequestsPage() {
                           handleCancelApproval(selectedRequest);
                         }
                       }}
-                      className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700"
+                      disabled={isCancelingApproval}
+                      className={`px-4 py-2 rounded-md flex items-center gap-2 ${
+                        isCancelingApproval
+                          ? 'bg-gray-400 cursor-not-allowed'
+                          : 'bg-orange-600 text-white hover:bg-orange-700'
+                      }`}
                     >
-                      承認を取り消す
+                      {isCancelingApproval && (
+                        <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      )}
+                      {isCancelingApproval ? '取り消し中...' : '承認を取り消す'}
                     </button>
                   </>
                 )}

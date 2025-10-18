@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { getSession } from '@/lib/auth';
 import { Resend } from 'resend';
 import { requestReceivedEmail } from '@/lib/request-received-email-template';
+import { newRequestNotificationEmail } from '@/lib/email-templates';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -127,7 +128,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 申請受付メールを送信
+    // 申請受付メールを申請者に送信
     try {
       if (!process.env.RESEND_API_KEY || !process.env.EMAIL_FROM) {
         console.error('[Request Received Email] Email service not configured');
@@ -153,6 +154,71 @@ export async function POST(request: NextRequest) {
       }
     } catch (emailError) {
       console.error('[Request Received Email] Error:', emailError);
+      // メール送信失敗でも申請処理は成功とする
+    }
+
+    // サポートチームへ新規申請通知メールを送信
+    try {
+      if (!process.env.RESEND_API_KEY || !process.env.EMAIL_FROM || !process.env.EMAIL_REQUEST_NOTIFICATION) {
+        console.error('[Admin Notification Email] Email service not configured or EMAIL_REQUEST_NOTIFICATION not set');
+      } else {
+        // ジャンル名を取得
+        let genreName: string | null = null;
+        if (genre_id && supabaseAdmin) {
+          const { data: genreData } = await supabaseAdmin
+            .from('genres')
+            .select('name')
+            .eq('id', genre_id)
+            .single();
+          if (genreData) {
+            genreName = genreData.name;
+          }
+        }
+
+        const adminUrl = process.env.NEXT_PUBLIC_APP_URL
+          ? `${process.env.NEXT_PUBLIC_APP_URL}/admin/requests`
+          : 'https://admin.garunavi.jp/admin/requests';
+
+        // 申請日時を日本時間でフォーマット
+        const requestedAt = new Date(data.created_at).toLocaleString('ja-JP', {
+          timeZone: 'Asia/Tokyo',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+
+        const notificationTemplate = newRequestNotificationEmail({
+          applicantName: applicant_name,
+          applicantEmail: applicant_email,
+          storeName: store_name,
+          storeAddress: store_address,
+          storePhone: store_phone,
+          genreName,
+          nearestStation: nearest_station || null,
+          railwayLine: railway_line || null,
+          requestId: data.id,
+          adminUrl,
+          requestedAt,
+        });
+
+        const { error: notificationError } = await resend.emails.send({
+          from: process.env.EMAIL_FROM,
+          to: [process.env.EMAIL_REQUEST_NOTIFICATION],
+          subject: notificationTemplate.subject,
+          html: notificationTemplate.html,
+          text: notificationTemplate.text,
+        });
+
+        if (notificationError) {
+          console.error('[Admin Notification Email] Failed to send:', notificationError);
+        } else {
+          console.log('[Admin Notification Email] Email sent successfully to:', process.env.EMAIL_REQUEST_NOTIFICATION);
+        }
+      }
+    } catch (notificationError) {
+      console.error('[Admin Notification Email] Error:', notificationError);
       // メール送信失敗でも申請処理は成功とする
     }
 

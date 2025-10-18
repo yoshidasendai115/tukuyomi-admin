@@ -10,6 +10,162 @@ export type EmailTemplate = {
 };
 
 /**
+ * サポートチーム向け：新規申請通知メールテンプレート
+ */
+export const newRequestNotificationEmail = (params: {
+  applicantName: string;
+  applicantEmail: string;
+  storeName: string;
+  storeAddress: string;
+  storePhone: string;
+  genreName: string | null;
+  nearestStation: string | null;
+  railwayLine: string | null;
+  requestId: string;
+  adminUrl: string;
+  requestedAt: string;
+}): EmailTemplate => {
+  const {
+    applicantName,
+    applicantEmail,
+    storeName,
+    storeAddress,
+    storePhone,
+    genreName,
+    nearestStation,
+    railwayLine,
+    requestId,
+    adminUrl,
+    requestedAt
+  } = params;
+  const appName = getAppName();
+
+  return {
+    subject: `【${appName}】新規店舗編集権限申請 - ${storeName}`,
+    html: `
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>新規申請通知</title>
+</head>
+<body style="font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background-color: #e8f4fd; border-radius: 8px; padding: 30px; margin-bottom: 20px;">
+    <h1 style="color: #2c3e50; margin-top: 0; font-size: 24px;">🔔 新規店舗編集権限申請</h1>
+    <p style="font-size: 16px; margin-bottom: 0;">
+      新しい店舗編集権限の申請がありました。
+    </p>
+  </div>
+
+  <div style="background-color: #ffffff; border: 2px solid #3498db; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+    <h2 style="color: #2c3e50; font-size: 18px; margin-top: 0; border-bottom: 2px solid #3498db; padding-bottom: 10px;">店舗情報</h2>
+    <table style="width: 100%; border-collapse: collapse;">
+      <tr>
+        <td style="padding: 10px 0; border-bottom: 1px solid #ecf0f1; font-weight: bold; width: 120px;">店舗名</td>
+        <td style="padding: 10px 0; border-bottom: 1px solid #ecf0f1;">${storeName}</td>
+      </tr>
+      <tr>
+        <td style="padding: 10px 0; border-bottom: 1px solid #ecf0f1; font-weight: bold;">住所</td>
+        <td style="padding: 10px 0; border-bottom: 1px solid #ecf0f1;">${storeAddress}</td>
+      </tr>
+      <tr>
+        <td style="padding: 10px 0; border-bottom: 1px solid #ecf0f1; font-weight: bold;">電話番号</td>
+        <td style="padding: 10px 0; border-bottom: 1px solid #ecf0f1;">${storePhone}</td>
+      </tr>
+      ${genreName ? `
+      <tr>
+        <td style="padding: 10px 0; border-bottom: 1px solid #ecf0f1; font-weight: bold;">業態</td>
+        <td style="padding: 10px 0; border-bottom: 1px solid #ecf0f1;">${genreName}</td>
+      </tr>
+      ` : ''}
+      ${nearestStation || railwayLine ? `
+      <tr>
+        <td style="padding: 10px 0; border-bottom: 1px solid #ecf0f1; font-weight: bold;">最寄り駅</td>
+        <td style="padding: 10px 0; border-bottom: 1px solid #ecf0f1;">${railwayLine ? railwayLine + ' ' : ''}${nearestStation || ''}</td>
+      </tr>
+      ` : ''}
+    </table>
+  </div>
+
+  <div style="background-color: #ffffff; border: 1px solid #e1e8ed; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+    <h2 style="color: #2c3e50; font-size: 18px; margin-top: 0; border-bottom: 2px solid #95a5a6; padding-bottom: 10px;">申請者情報</h2>
+    <table style="width: 100%; border-collapse: collapse;">
+      <tr>
+        <td style="padding: 10px 0; border-bottom: 1px solid #ecf0f1; font-weight: bold; width: 120px;">氏名</td>
+        <td style="padding: 10px 0; border-bottom: 1px solid #ecf0f1;">${applicantName}</td>
+      </tr>
+      <tr>
+        <td style="padding: 10px 0; border-bottom: 1px solid #ecf0f1; font-weight: bold;">メール</td>
+        <td style="padding: 10px 0; border-bottom: 1px solid #ecf0f1;"><a href="mailto:${applicantEmail}">${applicantEmail}</a></td>
+      </tr>
+      <tr>
+        <td style="padding: 10px 0; border-bottom: 1px solid #ecf0f1; font-weight: bold;">申請日時</td>
+        <td style="padding: 10px 0; border-bottom: 1px solid #ecf0f1;">${requestedAt}</td>
+      </tr>
+      <tr>
+        <td style="padding: 10px 0; font-weight: bold;">申請ID</td>
+        <td style="padding: 10px 0; font-family: 'Courier New', monospace; font-size: 12px;">${requestId}</td>
+      </tr>
+    </table>
+  </div>
+
+  <div style="background-color: #fff9e6; border: 1px solid #ffd966; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+    <p style="margin: 0 0 15px 0; font-weight: bold; color: #856404;">
+      ⚠️ 対応が必要です
+    </p>
+    <p style="margin: 0 0 15px 0; font-size: 14px;">
+      管理画面にログインして、申請内容と提出書類を確認してください。
+    </p>
+  </div>
+
+  <div style="text-align: center; margin: 30px 0;">
+    <a href="${adminUrl}" style="display: inline-block; background-color: #3498db; color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 6px; font-weight: bold; font-size: 16px;">管理画面で確認</a>
+  </div>
+
+  <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e1e8ed; font-size: 14px; color: #7f8c8d; text-align: center;">
+    <p style="margin: 0;">
+      ${appName} 自動通知システム
+    </p>
+  </div>
+</body>
+</html>
+    `,
+    text: `
+【${appName}】新規店舗編集権限申請
+
+新しい店舗編集権限の申請がありました。
+
+━━━━━━━━━━━━━━━━━━━━━━
+店舗情報
+━━━━━━━━━━━━━━━━━━━━━━
+店舗名: ${storeName}
+住所: ${storeAddress}
+電話番号: ${storePhone}
+${genreName ? `業態: ${genreName}\n` : ''}${nearestStation || railwayLine ? `最寄り駅: ${railwayLine ? railwayLine + ' ' : ''}${nearestStation || ''}\n` : ''}
+━━━━━━━━━━━━━━━━━━━━━━
+申請者情報
+━━━━━━━━━━━━━━━━━━━━━━
+氏名: ${applicantName}
+メール: ${applicantEmail}
+申請日時: ${requestedAt}
+申請ID: ${requestId}
+
+━━━━━━━━━━━━━━━━━━━━━━
+⚠️ 対応が必要です
+
+管理画面にログインして、申請内容と提出書類を確認してください。
+
+管理画面URL: ${adminUrl}
+
+━━━━━━━━━━━━━━━━━━━━━━
+${appName} 自動通知システム
+━━━━━━━━━━━━━━━━━━━━━━
+    `,
+  };
+};
+
+/**
  * 環境変数から値を取得するヘルパー関数
  */
 const getAppName = () => process.env.APP_NAME || 'がるなび';

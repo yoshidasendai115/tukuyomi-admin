@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import LoadingOverlay from '@/components/LoadingOverlay';
 
 interface Genre {
   id: string;
@@ -77,6 +78,7 @@ export default function StoreApplicationPage() {
   const [railwayLines, setRailwayLines] = useState<string[]>([]);
   const [stationSuggestions, setStationSuggestions] = useState<Station[]>([]);
   const [showStationSuggestions, setShowStationSuggestions] = useState(false);
+  const [selectedStationIndex, setSelectedStationIndex] = useState(-1);
   const [railwaySuggestions, setRailwaySuggestions] = useState<string[]>([]);
   const [showRailwaySuggestions, setShowRailwaySuggestions] = useState(false);
   const [isCalculatingDistance, setIsCalculatingDistance] = useState(false);
@@ -141,8 +143,10 @@ export default function StoreApplicationPage() {
         );
         setStationSuggestions(filtered.slice(0, 5));
         setShowStationSuggestions(true);
+        setSelectedStationIndex(-1);
       } else {
         setShowStationSuggestions(false);
+        setSelectedStationIndex(-1);
       }
     }
 
@@ -173,6 +177,7 @@ export default function StoreApplicationPage() {
       railway_line: selectedLine || (station.railway_lines.length > 0 ? station.railway_lines[0] : '')
     }));
     setShowStationSuggestions(false);
+    setSelectedStationIndex(-1);
   };
 
   // 路線選択時のハンドラー
@@ -182,6 +187,55 @@ export default function StoreApplicationPage() {
       railway_line: line
     }));
     setShowRailwaySuggestions(false);
+  };
+
+  // 駅名入力のキーボードイベントハンドラー
+  const handleStationKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showStationSuggestions || stationSuggestions.length === 0) return;
+
+    // 各駅の路線数を数えて、全選択肢の数を計算
+    let totalOptions = 0;
+    const stationOptionsCount: number[] = [];
+    stationSuggestions.forEach(station => {
+      const optionsCount = station.railway_lines.length > 1 ? station.railway_lines.length : 1;
+      stationOptionsCount.push(optionsCount);
+      totalOptions += optionsCount;
+    });
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedStationIndex(prev =>
+        prev < totalOptions - 1 ? prev + 1 : 0
+      );
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedStationIndex(prev =>
+        prev > 0 ? prev - 1 : totalOptions - 1
+      );
+    } else if (e.key === 'Enter' && selectedStationIndex >= 0) {
+      e.preventDefault();
+
+      // 選択されたインデックスから駅と路線を特定
+      let currentIndex = 0;
+      for (let i = 0; i < stationSuggestions.length; i++) {
+        const station = stationSuggestions[i];
+        const optionsCount = stationOptionsCount[i];
+
+        if (selectedStationIndex < currentIndex + optionsCount) {
+          const lineIndex = selectedStationIndex - currentIndex;
+          if (station.railway_lines.length > 1) {
+            handleStationSelect(station, station.railway_lines[lineIndex]);
+          } else {
+            handleStationSelect(station, null);
+          }
+          return;
+        }
+        currentIndex += optionsCount;
+      }
+    } else if (e.key === 'Escape') {
+      setShowStationSuggestions(false);
+      setSelectedStationIndex(-1);
+    }
   };
 
   // 距離自動計算
@@ -375,8 +429,14 @@ export default function StoreApplicationPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <>
+      {/* グローバルローディングオーバーレイ */}
+      <LoadingOverlay
+        isLoading={isSubmitting || isCalculatingDistance || Object.values(uploadingFiles).some(v => v)}
+      />
+
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white rounded-lg shadow p-8">
           <h1 className="text-2xl font-bold text-gray-900 mb-8">店舗編集権限申請フォーム</h1>
 
@@ -465,37 +525,56 @@ export default function StoreApplicationPage() {
                     name="nearest_station"
                     value={formData.nearest_station}
                     onChange={handleInputChange}
+                    onKeyDown={handleStationKeyDown}
                     placeholder="駅名を入力"
                     className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                   />
                   {showStationSuggestions && stationSuggestions.length > 0 && (
                     <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-80 overflow-y-auto">
-                      {stationSuggestions.map(station => (
-                        <div key={station.id} className="border-b border-gray-100 last:border-b-0">
-                          {station.railway_lines.length > 1 ? (
-                            <div className="px-3 py-2">
-                              {station.railway_lines.map((line) => (
-                                <button
-                                  key={`${station.id}-${line}`}
-                                  type="button"
-                                  onClick={() => handleStationSelect(station, line)}
-                                  className="w-full text-left px-2 py-1 text-sm hover:bg-gray-100 cursor-pointer mb-1"
-                                >
-                                  {line} {station.name}
-                                </button>
-                              ))}
-                            </div>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => handleStationSelect(station, null)}
-                              className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 cursor-pointer"
-                            >
-                              {station.railway_lines[0] || ''} {station.name}
-                            </button>
-                          )}
-                        </div>
-                      ))}
+                      {stationSuggestions.map((station, stationIdx) => {
+                        // このstationの開始インデックスを計算
+                        let startIndex = 0;
+                        for (let i = 0; i < stationIdx; i++) {
+                          startIndex += stationSuggestions[i].railway_lines.length > 1
+                            ? stationSuggestions[i].railway_lines.length
+                            : 1;
+                        }
+
+                        return (
+                          <div key={station.id} className="border-b border-gray-100 last:border-b-0">
+                            {station.railway_lines.length > 1 ? (
+                              <div className="px-3 py-2">
+                                {station.railway_lines.map((line, lineIdx) => {
+                                  const optionIndex = startIndex + lineIdx;
+                                  const isSelected = selectedStationIndex === optionIndex;
+                                  return (
+                                    <button
+                                      key={`${station.id}-${line}`}
+                                      type="button"
+                                      onClick={() => handleStationSelect(station, line)}
+                                      className={`w-full text-left px-2 py-1 text-sm cursor-pointer mb-1 rounded ${
+                                        isSelected ? 'bg-blue-100' : 'hover:bg-gray-100'
+                                      }`}
+                                    >
+                                      {line} {station.name}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleStationSelect(station, null)}
+                                className={`w-full text-left px-3 py-2 text-sm cursor-pointer ${
+                                  selectedStationIndex === startIndex ? 'bg-blue-100' : 'hover:bg-gray-100'
+                                }`}
+                              >
+                                {station.railway_lines[0] || ''} {station.name}
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -545,8 +624,14 @@ export default function StoreApplicationPage() {
                       type="button"
                       onClick={calculateDistance}
                       disabled={isCalculatingDistance || !formData.nearest_station || !formData.store_address}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex items-center gap-2"
                     >
+                      {isCalculatingDistance && (
+                        <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      )}
                       {isCalculatingDistance ? '計算中...' : '自動計算'}
                     </button>
                   </div>
@@ -688,7 +773,13 @@ export default function StoreApplicationPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                 />
                 {uploadingFiles.business_license_image && (
-                  <p className="text-sm text-blue-600 mt-1">アップロード中...</p>
+                  <div className="flex items-center gap-2 text-sm text-blue-600 mt-1">
+                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    アップロード中...
+                  </div>
                 )}
                 {formData.business_license_image && (
                   <div className="mt-2">
@@ -758,7 +849,13 @@ export default function StoreApplicationPage() {
                       </label>
                     </div>
                     {uploadingFiles.additional_document_image && (
-                      <p className="text-sm text-blue-600 mt-1">アップロード中...</p>
+                      <div className="flex items-center gap-2 text-sm text-blue-600 mt-1">
+                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        アップロード中...
+                      </div>
                     )}
                     {formData.additional_document_image && (
                       <div className="mt-2">
@@ -816,7 +913,13 @@ export default function StoreApplicationPage() {
                   </label>
                 </div>
                 {uploadingFiles.identity_document_image && (
-                  <p className="text-sm text-blue-600 mt-1">アップロード中...</p>
+                  <div className="flex items-center gap-2 text-sm text-blue-600 mt-1">
+                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    アップロード中...
+                  </div>
                 )}
                 {formData.identity_document_image && (
                   <div className="mt-2">
@@ -882,14 +985,21 @@ export default function StoreApplicationPage() {
                 type="submit"
                 disabled={isSubmitting || !formData.business_license_image || !formData.additional_document_type ||
                   (formData.additional_document_type === 'identity_document' ? !formData.identity_document_image : !formData.additional_document_image)}
-                className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
               >
+                {isSubmitting && (
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                )}
                 {isSubmitting ? '送信中...' : '申請を送信'}
               </button>
             </div>
           </form>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

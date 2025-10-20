@@ -23,10 +23,10 @@ export async function POST(request: NextRequest) {
     }
 
     // ファイルタイプチェック
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'];
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'application/pdf'];
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
-        { error: 'JPG、PNG、WebP、PDF形式のファイルのみアップロード可能です' },
+        { error: 'JPG、PNG、WebP、HEIC、PDF形式のファイルのみアップロード可能です' },
         { status: 400 }
       );
     }

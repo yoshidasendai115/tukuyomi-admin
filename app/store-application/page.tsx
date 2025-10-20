@@ -30,7 +30,7 @@ interface FormData {
   business_license: string;
   additional_info: string;
   business_license_image: string;
-  additional_document_type: 'late_night_license' | 'corporate_registry' | '';
+  additional_document_type: 'late_night_license' | 'corporate_registry' | 'entertainment_license' | '';
   additional_document_image: string;
   identity_document_image: string;
   nearest_station: string;
@@ -278,11 +278,19 @@ export default function StoreApplicationPage() {
   const handleFileUpload = async (file: File, fieldName: string) => {
     if (!file) return;
 
+    // HEICファイルのチェック
+    if (file.type === 'image/heic' || file.type === 'image/heif' || file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')) {
+      alert('HEIC形式の画像は対応していません。\n\niPhoneをご利用の場合：\n1. 写真アプリで画像を開く\n2. 共有ボタンをタップ\n3. 「ファイルに保存」を選択\n4. フォーマットを「JPEG」に変更して保存\n5. 保存したJPEG画像をアップロードしてください\n\nまたは、カメラ設定で「互換性優先」を選択してください。');
+      return;
+    }
+
     setUploadingFiles(prev => ({ ...prev, [fieldName]: true }));
 
     try {
+      const fileToUpload = file;
+
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', fileToUpload);
       formData.append('folder', 'store-applications');
 
       const response = await fetch('/api/upload', {
@@ -309,7 +317,7 @@ export default function StoreApplicationPage() {
       alert('ファイルのアップロードが完了しました');
     } catch (error) {
       console.error('Upload error:', error);
-      alert('ファイルのアップロードに失敗しました');
+      alert(error instanceof Error ? error.message : 'ファイルのアップロードに失敗しました');
     } finally {
       setUploadingFiles(prev => ({ ...prev, [fieldName]: false }));
     }
@@ -743,7 +751,7 @@ export default function StoreApplicationPage() {
                     ファイルを選択（写真またはPDF）
                     <input
                       type="file"
-                      accept="image/*,.pdf"
+                      accept="image/jpeg,image/jpg,image/png,image/webp,.pdf"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) handleFileUpload(file, 'business_license_image');
@@ -751,6 +759,9 @@ export default function StoreApplicationPage() {
                       className="hidden"
                     />
                   </label>
+                  <p className="text-xs text-gray-500 mt-1">
+                    書類は5MB以下のJPG、PNG、WebP、PDF形式でアップロードしてください
+                  </p>
                 </div>
                 <input
                   type="text"
@@ -814,6 +825,7 @@ export default function StoreApplicationPage() {
                   <option value="">選択してください</option>
                   <option value="late_night_license">深夜酒類提供飲食店営業届出</option>
                   <option value="corporate_registry">法人登記簿謄本</option>
+                  <option value="entertainment_license">風俗営業許可証</option>
                 </select>
                 {formData.additional_document_type && (
                   <>
@@ -825,7 +837,7 @@ export default function StoreApplicationPage() {
                         ファイルを選択（写真またはPDF）
                         <input
                           type="file"
-                          accept="image/*,.pdf"
+                          accept="image/jpeg,image/jpg,image/png,image/webp,.pdf"
                           onChange={(e) => {
                             const file = e.target.files?.[0];
                             if (file) handleFileUpload(file, 'additional_document_image');
@@ -833,6 +845,9 @@ export default function StoreApplicationPage() {
                           className="hidden"
                         />
                       </label>
+                      <p className="text-xs text-gray-500 mt-1">
+                        書類は5MB以下のJPG、PNG、WebP、PDF形式でアップロードしてください
+                      </p>
                     </div>
                     {uploadingFiles.additional_document_image && (
                       <p className="text-sm text-blue-600 mt-1">
@@ -885,7 +900,7 @@ export default function StoreApplicationPage() {
                     ファイルを選択（写真またはPDF）
                     <input
                       type="file"
-                      accept="image/*,.pdf"
+                      accept="image/jpeg,image/jpg,image/png,image/webp,.pdf"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) handleFileUpload(file, 'identity_document_image');
@@ -893,6 +908,9 @@ export default function StoreApplicationPage() {
                       className="hidden"
                     />
                   </label>
+                  <p className="text-xs text-gray-500 mt-1">
+                    書類は5MB以下のJPG、PNG、WebP、PDF形式でアップロードしてください
+                  </p>
                 </div>
                 {uploadingFiles.identity_document_image && (
                   <p className="text-sm text-blue-600 mt-1">
@@ -952,7 +970,7 @@ export default function StoreApplicationPage() {
               <ul className="text-sm text-yellow-700 space-y-1">
                 <li>• 申請後、管理者による書類確認を行います</li>
                 <li>• 確認完了後、店舗編集用のURLをメールでお送りします</li>
-                <li>• 書類は5MB以下のJPG、PNG、WebP、PDF形式でアップロードしてください</li>
+                <li>• 書類は5MB以下のJPG、PNG、WebP、PDF形式でアップロードしてください（HEIC形式は非対応）</li>
                 <li>• 飲食店営業許可証と追加書類のアップロードは必須です</li>
                 <li>• 個人情報は厳重に管理し、申請処理以外には使用いたしません</li>
               </ul>

@@ -163,8 +163,10 @@ export async function POST(request: NextRequest) {
       };
 
       // 5回失敗したらロック
-      if (newFailedAttempts >= maxAttempts) {
-        const lockUntil = new Date();
+      const isLocked = newFailedAttempts >= maxAttempts;
+      let lockUntil: Date | null = null;
+      if (isLocked) {
+        lockUntil = new Date();
         lockUntil.setMinutes(lockUntil.getMinutes() + 30);
         updateData.locked_until = lockUntil.toISOString();
       }
@@ -179,7 +181,7 @@ export async function POST(request: NextRequest) {
       await supabaseAdmin
         .from('admin_access_logs')
         .insert({
-          action: newFailedAttempts >= maxAttempts ? 'admin_login_blocked' : 'admin_login_failed',
+          action: isLocked ? 'admin_login_blocked' : 'admin_login_failed',
           details: {
             login_id: loginId,
             attempts: newFailedAttempts,
@@ -188,6 +190,65 @@ export async function POST(request: NextRequest) {
           ip_address: ip,
           user_agent: request.headers.get('user-agent') || undefined
         });
+
+      // アカウントがロックされた場合、メール送信
+      if (isLocked && user.email && lockUntil) {
+        console.log('[Login] Account locked, sending notification email to:', user.login_id);
+
+        try {
+          // ロック期間を計算（分単位）
+          const lockDurationMinutes = 30; // 固定値
+
+          // ロック解除トークンを作成
+          const expiresAt = new Date();
+          expiresAt.setMinutes(expiresAt.getMinutes() + 30);
+
+          const { data: unlockToken, error: tokenError } = await supabaseAdmin
+            .from('account_unlock_tokens')
+            .insert({
+              user_id: user.id,
+              expires_at: expiresAt.toISOString(),
+              ip_address: ip,
+              user_agent: request.headers.get('user-agent') || undefined,
+            })
+            .select('token')
+            .single();
+
+          if (tokenError || !unlockToken) {
+            console.error('[Login] Failed to create unlock token:', tokenError);
+          } else if (process.env.NEXT_PUBLIC_APP_URL) {
+            // ロック解除URLを生成
+            const unlockUrl = `${process.env.NEXT_PUBLIC_APP_URL}/admin/unlock-account/${unlockToken.token}`;
+
+            // メール送信
+            const emailResponse = await fetch(new URL('/api/emails/send', request.url).toString(), {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                type: 'account_locked',
+                to: user.email,
+                data: {
+                  adminName: user.display_name || user.login_id,
+                  unlockUrl,
+                  lockDurationMinutes,
+                },
+              }),
+            });
+
+            if (!emailResponse.ok) {
+              const errorData = await emailResponse.json();
+              console.error('[Login] Failed to send lock notification email:', errorData);
+            } else {
+              console.log('[Login] Lock notification email sent successfully');
+            }
+          }
+        } catch (emailError) {
+          console.error('[Login] Error sending lock notification email:', emailError);
+          // メール送信失敗してもログイン処理（ロック）は継続
+        }
+      }
 
       const attemptsRemaining = Math.max(0, maxAttempts - newFailedAttempts);
 

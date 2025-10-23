@@ -166,6 +166,14 @@ export default function AdminLoginPage() {
           </form>
 
           <div className="mt-6 text-center space-y-2">
+            {isBlocked && (
+              <Link
+                href="/admin/unlock-account"
+                className="block text-sm text-orange-600 hover:text-orange-500 font-semibold"
+              >
+                アカウントのロックを今すぐ解除する
+              </Link>
+            )}
             <Link
               href="/admin/forgot-password"
               className="block text-sm text-indigo-600 hover:text-indigo-500"

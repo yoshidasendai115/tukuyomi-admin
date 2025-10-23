@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
-import { storeApprovalEmail, passwordResetEmail, adminAccountCreatedEmail } from '@/lib/email-templates';
+import {
+  storeApprovalEmail,
+  passwordResetEmail,
+  adminAccountCreatedEmail,
+  accountLockedEmail,
+  accountUnlockedEmail
+} from '@/lib/email-templates';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-export type EmailType = 'store_approval' | 'password_reset' | 'admin_account_created';
+export type EmailType = 'store_approval' | 'password_reset' | 'admin_account_created' | 'account_locked' | 'account_unlocked';
 
 export type SendEmailRequest = {
   type: EmailType;
@@ -72,6 +78,12 @@ export async function POST(request: NextRequest) {
         break;
       case 'admin_account_created':
         emailTemplate = adminAccountCreatedEmail(data as Parameters<typeof adminAccountCreatedEmail>[0]);
+        break;
+      case 'account_locked':
+        emailTemplate = accountLockedEmail(data as Parameters<typeof accountLockedEmail>[0]);
+        break;
+      case 'account_unlocked':
+        emailTemplate = accountUnlockedEmail(data as Parameters<typeof accountUnlockedEmail>[0]);
         break;
       default:
         return NextResponse.json(

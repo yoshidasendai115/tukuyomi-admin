@@ -401,6 +401,210 @@ Email: ${supportEmail}
 };
 
 /**
+ * アカウントロック通知メールテンプレート
+ */
+export const accountLockedEmail = (params: {
+  adminName: string;
+  unlockUrl: string;
+  lockDurationMinutes: number;
+}): EmailTemplate => {
+  const { adminName, unlockUrl, lockDurationMinutes } = params;
+  const appName = getAppName();
+  const fromName = getFromName();
+  const supportEmail = getSupportEmail();
+
+  return {
+    subject: `【${appName}】アカウントがロックされました`,
+    html: `
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>アカウントロック通知</title>
+</head>
+<body style="font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background-color: #ffe6e6; border-radius: 8px; padding: 30px; margin-bottom: 20px; border-left: 4px solid #e74c3c;">
+    <h1 style="color: #c0392b; margin-top: 0; font-size: 24px;">⚠️ アカウントがロックされました</h1>
+    <p style="font-size: 16px;">
+      ${adminName} 様
+    </p>
+    <p style="font-size: 16px;">
+      セキュリティ保護のため、アカウントが一時的にロックされました。
+    </p>
+  </div>
+
+  <div style="background-color: #ffffff; border: 1px solid #e1e8ed; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+    <h2 style="color: #2c3e50; font-size: 18px; margin-top: 0; border-bottom: 2px solid #e74c3c; padding-bottom: 10px;">ロックの理由</h2>
+    <p style="margin-bottom: 15px; font-size: 16px;">
+      ログインパスワードの入力を5回連続で失敗したため、不正アクセスを防ぐために自動的にアカウントをロックしました。
+    </p>
+    <div style="background-color: #fff9e6; border-left: 4px solid #ffd966; padding: 15px; border-radius: 4px; margin-bottom: 15px;">
+      <p style="margin: 0; font-weight: bold; color: #856404;">自動ロック解除までの時間</p>
+      <p style="margin: 10px 0 0 0; font-size: 20px; color: #856404;">
+        <strong>${lockDurationMinutes}分後</strong>
+      </p>
+    </div>
+  </div>
+
+  <div style="background-color: #e8f4fd; border: 1px solid #3498db; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+    <h2 style="color: #2c3e50; font-size: 18px; margin-top: 0; border-bottom: 2px solid #3498db; padding-bottom: 10px;">すぐにロックを解除する</h2>
+    <p style="margin-bottom: 15px;">
+      ${lockDurationMinutes}分間待たずにすぐにアカウントのロックを解除することができます。
+    </p>
+    <div style="text-align: center; margin: 20px 0;">
+      <a href="${unlockUrl}" style="display: inline-block; background-color: #3498db; color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 6px; font-weight: bold; font-size: 16px;">今すぐロックを解除</a>
+    </div>
+    <p style="margin: 15px 0 0 0; font-size: 14px; color: #7f8c8d;">
+      このリンクは発行から30分間有効です。
+    </p>
+  </div>
+
+  <div style="background-color: #fff9e6; border-left: 4px solid #ffd966; border-radius: 4px; padding: 15px; margin-bottom: 20px;">
+    <p style="margin: 0; font-weight: bold; color: #856404;">💡 ヒント</p>
+    <ul style="margin: 10px 0 0 0; padding-left: 20px; font-size: 14px;">
+      <li>パスワードを忘れた場合は、ログイン画面から「パスワードをお忘れですか？」をクリックしてリセットできます。</li>
+      <li>このロック通知に心当たりがない場合は、第三者による不正アクセスの可能性があります。すぐにパスワードを変更することをお勧めします。</li>
+    </ul>
+  </div>
+
+  <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e1e8ed; font-size: 14px; color: #7f8c8d; text-align: center;">
+    <p style="margin: 0;">
+      <strong>${fromName}</strong><br>
+      Email: ${supportEmail}
+    </p>
+  </div>
+</body>
+</html>
+    `,
+    text: `
+【${appName}】アカウントがロックされました
+
+${adminName} 様
+
+セキュリティ保護のため、アカウントが一時的にロックされました。
+
+━━━━━━━━━━━━━━━━━━━━━━
+ロックの理由
+━━━━━━━━━━━━━━━━━━━━━━
+ログインパスワードの入力を5回連続で失敗したため、不正アクセスを防ぐために自動的にアカウントをロックしました。
+
+自動ロック解除までの時間: ${lockDurationMinutes}分後
+
+━━━━━━━━━━━━━━━━━━━━━━
+すぐにロックを解除する
+━━━━━━━━━━━━━━━━━━━━━━
+${lockDurationMinutes}分間待たずにすぐにアカウントのロックを解除することができます。
+
+以下のURLにアクセスしてください：
+${unlockUrl}
+
+このリンクは発行から30分間有効です。
+
+━━━━━━━━━━━━━━━━━━━━━━
+💡 ヒント
+━━━━━━━━━━━━━━━━━━━━━━
+・パスワードを忘れた場合は、ログイン画面から「パスワードをお忘れですか？」をクリックしてリセットできます。
+・このロック通知に心当たりがない場合は、第三者による不正アクセスの可能性があります。すぐにパスワードを変更することをお勧めします。
+
+━━━━━━━━━━━━━━━━━━━━━━
+${fromName}
+Email: ${supportEmail}
+━━━━━━━━━━━━━━━━━━━━━━
+    `,
+  };
+};
+
+/**
+ * アカウントロック解除完了メールテンプレート
+ */
+export const accountUnlockedEmail = (params: {
+  adminName: string;
+  loginUrl: string;
+}): EmailTemplate => {
+  const { adminName, loginUrl } = params;
+  const appName = getAppName();
+  const fromName = getFromName();
+  const supportEmail = getSupportEmail();
+
+  return {
+    subject: `【${appName}】アカウントのロックが解除されました`,
+    html: `
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>アカウントロック解除完了</title>
+</head>
+<body style="font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background-color: #e8f8f5; border-radius: 8px; padding: 30px; margin-bottom: 20px; border-left: 4px solid #27ae60;">
+    <h1 style="color: #27ae60; margin-top: 0; font-size: 24px;">✓ アカウントのロックが解除されました</h1>
+    <p style="font-size: 16px;">
+      ${adminName} 様
+    </p>
+    <p style="font-size: 16px;">
+      アカウントのロックが正常に解除されました。再度ログインできるようになりました。
+    </p>
+  </div>
+
+  <div style="background-color: #ffffff; border: 1px solid #e1e8ed; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+    <h2 style="color: #2c3e50; font-size: 18px; margin-top: 0; border-bottom: 2px solid #27ae60; padding-bottom: 10px;">ログイン情報</h2>
+    <p style="margin-bottom: 15px;">
+      以下のリンクから管理画面にアクセスできます。
+    </p>
+    <div style="text-align: center; margin: 20px 0;">
+      <a href="${loginUrl}" style="display: inline-block; background-color: #27ae60; color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 6px; font-weight: bold; font-size: 16px;">ログイン画面へ</a>
+    </div>
+  </div>
+
+  <div style="background-color: #fff9e6; border-left: 4px solid #ffd966; border-radius: 4px; padding: 15px; margin-bottom: 20px;">
+    <p style="margin: 0; font-weight: bold; color: #856404;">🔒 セキュリティに関するお知らせ</p>
+    <ul style="margin: 10px 0 0 0; padding-left: 20px; font-size: 14px;">
+      <li>このロック解除に心当たりがない場合は、すぐにパスワードを変更してください。</li>
+      <li>不正アクセスの疑いがある場合は、運営チームまでお問い合わせください。</li>
+      <li>定期的にパスワードを変更することをお勧めします。</li>
+    </ul>
+  </div>
+
+  <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e1e8ed; font-size: 14px; color: #7f8c8d; text-align: center;">
+    <p style="margin: 0;">
+      <strong>${fromName}</strong><br>
+      Email: ${supportEmail}
+    </p>
+  </div>
+</body>
+</html>
+    `,
+    text: `
+【${appName}】アカウントのロックが解除されました
+
+${adminName} 様
+
+アカウントのロックが正常に解除されました。再度ログインできるようになりました。
+
+━━━━━━━━━━━━━━━━━━━━━━
+ログイン情報
+━━━━━━━━━━━━━━━━━━━━━━
+以下のURLから管理画面にアクセスできます：
+${loginUrl}
+
+━━━━━━━━━━━━━━━━━━━━━━
+🔒 セキュリティに関するお知らせ
+━━━━━━━━━━━━━━━━━━━━━━
+・このロック解除に心当たりがない場合は、すぐにパスワードを変更してください。
+・不正アクセスの疑いがある場合は、運営チームまでお問い合わせください。
+・定期的にパスワードを変更することをお勧めします。
+
+━━━━━━━━━━━━━━━━━━━━━━
+${fromName}
+Email: ${supportEmail}
+━━━━━━━━━━━━━━━━━━━━━━
+    `,
+  };
+};
+
+/**
  * 管理者アカウント作成メールテンプレート
  */
 export const adminAccountCreatedEmail = (params: {

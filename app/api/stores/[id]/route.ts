@@ -101,6 +101,7 @@ export async function PATCH(
       'sns_instagram',
       'sns_twitter',
       'sns_tiktok',
+      'sns_youtube',
       'minimum_hourly_wage',
       'maximum_hourly_wage',
       'recruitment_status',

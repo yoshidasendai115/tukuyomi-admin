@@ -43,6 +43,7 @@ interface Store {
   sns_instagram?: string;
   sns_twitter?: string;
   sns_tiktok?: string;
+  sns_youtube?: string;
   rating?: number;
   review_count?: number;
   area?: string;
@@ -742,6 +743,11 @@ function AdminStoreEditPageContent({ params }: PageProps) {
 
     if (formData.sns_tiktok && !isValidURL(formData.sns_tiktok)) {
       alert('TikTokのURLの形式が正しくありません。\nhttp:// または https:// で始まる正しいURLを入力してください。');
+      return;
+    }
+
+    if (formData.sns_youtube && !isValidURL(formData.sns_youtube)) {
+      alert('YouTubeのURLの形式が正しくありません。\nhttp:// または https:// で始まる正しいURLを入力してください。');
       return;
     }
 
@@ -1544,6 +1550,21 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                         disabled={isFreeplan()}
                         className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 ${isFreeplan() ? 'bg-gray-100 cursor-not-allowed text-gray-500' : ''}`}
                         placeholder="https://tiktok.com/@username"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        YouTube
+                      </label>
+                      <input
+                        type="url"
+                        name="sns_youtube"
+                        value={formData.sns_youtube || ''}
+                        onChange={handleInputChange}
+                        disabled={isFreeplan()}
+                        className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 ${isFreeplan() ? 'bg-gray-100 cursor-not-allowed text-gray-500' : ''}`}
+                        placeholder="https://youtube.com/@channel または https://www.youtube.com/watch?v=..."
                       />
                     </div>
                   </div>

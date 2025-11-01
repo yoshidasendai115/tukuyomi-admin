@@ -647,9 +647,10 @@ function AdminStoreEditPageContent({ params }: PageProps) {
       return;
     }
 
-    // バリデーション: 本文の文字数チェック
-    if (messageContent.length > 50) {
-      alert(`本文は50文字以内で入力してください。\n現在: ${messageContent.length}文字（${messageContent.length - 50}文字オーバー）`);
+    // バリデーション: 本文の文字数チェック（絵文字対応）
+    const messageContentLength = [...messageContent].length;
+    if (messageContentLength > 280) {
+      alert(`本文は280文字以内で入力してください。\n現在: ${messageContentLength}文字（${messageContentLength - 280}文字オーバー）`);
       return;
     }
 
@@ -708,9 +709,10 @@ function AdminStoreEditPageContent({ params }: PageProps) {
       return;
     }
 
-    // バリデーション: 店舗説明の文字数チェック
-    if (formData.description && formData.description.length > 50) {
-      alert(`店舗説明は50文字以内で入力してください。\n現在: ${formData.description.length}文字（${formData.description.length - 50}文字オーバー）`);
+    // バリデーション: 店舗説明の文字数チェック（絵文字対応）
+    if (formData.description && [...formData.description].length > 500) {
+      const descriptionLength = [...formData.description].length;
+      alert(`店舗説明は500文字以内で入力してください。\n現在: ${descriptionLength}文字（${descriptionLength - 500}文字オーバー）`);
       return;
     }
 
@@ -1216,13 +1218,13 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                         placeholder="店舗の特徴や魅力を記入"
                       />
                       <p className={`mt-1 text-xs ${
-                        (formData.description || '').length > 50
+                        [...(formData.description || '')].length > 500
                           ? 'text-red-600 font-semibold'
                           : 'text-gray-500'
                       }`}>
-                        {(formData.description || '').length > 50
-                          ? `${(formData.description || '').length}/50文字（${(formData.description || '').length - 50}文字オーバー）`
-                          : `${(formData.description || '').length}/50文字`}
+                        {[...(formData.description || '')].length > 500
+                          ? `${[...(formData.description || '')].length}/500文字（${[...(formData.description || '')].length - 500}文字オーバー）`
+                          : `${[...(formData.description || '')].length}/500文字`}
                       </p>
                     </div>
 
@@ -2411,13 +2413,13 @@ function AdminStoreEditPageContent({ params }: PageProps) {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       />
                       <p className={`mt-1 text-xs ${
-                        messageContent.length > 50
+                        [...messageContent].length > 280
                           ? 'text-red-600 font-semibold'
                           : 'text-gray-500'
                       }`}>
-                        {messageContent.length > 50
-                          ? `${messageContent.length}/50文字（${messageContent.length - 50}文字オーバー）`
-                          : `${messageContent.length}/50文字`}
+                        {[...messageContent].length > 280
+                          ? `${[...messageContent].length}/280文字（${[...messageContent].length - 280}文字オーバー）`
+                          : `${[...messageContent].length}/280文字`}
                       </p>
                     </div>
 
